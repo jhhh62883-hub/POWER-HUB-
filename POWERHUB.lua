@@ -1,3 +1,7 @@
+if not script_key or script_key == "" then
+    game.Players.LocalPlayer:Kick("❌ Error: Invalid or Missing Key! Please get a valid key from our Discord bot.")
+    return
+end
 --POWERHUB⚡️|duel-lagger&mobile-optimized
 local Players=game:GetService("Players")
 local RunService=game:GetService("RunService")
