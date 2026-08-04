@@ -1,4 +1,3 @@
-
 --POWERHUB⚡️|duel-lagger&mobile-optimized
 local Players=game:GetService("Players")
 local RunService=game:GetService("RunService")
