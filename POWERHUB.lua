@@ -1,33 +1,40 @@
 -- ==========================================
--- POWER HUB ⚡ | Secure Discord Loader
+-- POWER HUB ⚡ | Bot Dynamic Expiry Loader
 -- ==========================================
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 
--- Kan-t-2kkdo mn l-key b 3 tariqat bash ma y-kon 7ta mochkil f ay executor (Delta, etc.)
+-- Kan-t-qraw l-key w l-expiry timestamp li sifto l-bot dy Discord
 local providedKey = _G.script_key or script_key or (getgenv and getgenv().script_key)
+local expiryTime = _G.script_expiry or script_expiry or (getgenv and getgenv().script_expiry)
 
--- Qayma dyal l-keys dyalk (Zid hna l-keys li k-t-generer w t-sifto f Discord)
-local VALID_KEYS = {
-    ["POWERD1SRDFBWBAYOFZ6C"] = true,
-    ["EXAMPLE_KEY_2"] = true,
-}
-
--- Ila ma kanch l-key, wla maktob ghalat, wla makaynach f table, y-tkicka f t-wanya
-if not providedKey or not VALID_KEYS[providedKey] then
+-- 1. Wach l-key mawjod w maktob?
+if not providedKey then
     LocalPlayer:Kick([[
 [POWERHUB SECURITY]
-❌ Invalid Key or Expired! Get a valid key from our Discord shop.
+❌ No Key Provided! Get a valid key from our Discord shop.
 ]])
     return
 end
 
+-- 2. Wach l-key expira (Waqt fatah)?
+-- (Ila kan l-bot kay-sifet expiry timestamp, kan-mpariwah m3a os-sa3a l-halia)
+if expiryTime and type(expiryTime) == "number" then
+    if os.time() > expiryTime then
+        LocalPlayer:Kick([[
+[POWERHUB SECURITY]
+❌ Your Key has Expired! Please renew your subscription in our Discord.
+]])
+        return
+    end
+end
+
 -- ==========================================
--- 2. SCRIPT L-ASLI (Ila kan l-key s-sahih 100%)
+-- SCRIPT L-ASLI (Ila kan l-key s-sahih w mazal mafatih l-waqt)
 -- ==========================================
-print("POWER HUB: Key Verified Successfully!")
+print("POWER HUB: Key & Expiry Verified Successfully!")
 
 local isMobile = UserInputService.TouchEnabled and not UserInputService.MouseEnabled
 
