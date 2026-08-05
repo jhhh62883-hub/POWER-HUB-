@@ -1,21 +1,21 @@
 -- ==========================================
--- POWER HUB ⚡ | Fixed Discord Key Loader
+-- POWER HUB ⚡ | Secure Discord Loader
 -- ==========================================
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 
--- Kan-t-2kkdo mn l-key b 2 tariqat bash may-ghltch l-executor
-local providedKey = getgenv().script_key or _G.script_key
+-- Kan-t-2kkdo mn l-key b 3 tariqat bash ma y-kon 7ta mochkil f ay executor (Delta, etc.)
+local providedKey = _G.script_key or script_key or (getgenv and getgenv().script_key)
 
--- Qayma dyal l-keys dyalk (Zid hna l-keys li k-t-sifto f Discord)
+-- Qayma dyal l-keys dyalk (Zid hna l-keys li k-t-generer w t-sifto f Discord)
 local VALID_KEYS = {
     ["POWERD1SRDFBWBAYOFZ6C"] = true,
     ["EXAMPLE_KEY_2"] = true,
 }
 
--- Ila ma kanch l-key wla ghalat, y-tkicka
+-- Ila ma kanch l-key, wla maktob ghalat, wla makaynach f table, y-tkicka f t-wanya
 if not providedKey or not VALID_KEYS[providedKey] then
     LocalPlayer:Kick([[
 [POWERHUB SECURITY]
@@ -25,7 +25,7 @@ if not providedKey or not VALID_KEYS[providedKey] then
 end
 
 -- ==========================================
--- SCRIPT L-ASLI (Ila kan l-key s-sahih)
+-- 2. SCRIPT L-ASLI (Ila kan l-key s-sahih 100%)
 -- ==========================================
 print("POWER HUB: Key Verified Successfully!")
 
