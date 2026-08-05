@@ -10,11 +10,11 @@ local TweenService = game:GetService("TweenService")
 local providedKey = _G.script_key or script_key or (getgenv and getgenv().script_key)
 local expiryTime = _G.script_expiry or script_expiry or (getgenv and getgenv().script_expiry)
 
--- 1. Wach l-moshteri dar l-key wla ja dakh, bla key? (Y-tkicka)
+-- 1. Wach l-moshteri dar l-key wla ja dakh, bla key?
 if not providedKey then
     LocalPlayer:Kick([[
 [POWERHUB SECURITY]
-❌ No Key Provided! Get a valid key from our Discord shop.
+❌ No Key Provided! Get a valid key from our Discord.
 ]])
     return
 end
@@ -31,7 +31,7 @@ if expiryTime and type(expiryTime) == "number" then
 end
 
 -- ==========================================
--- 3. SCRIPT L-ASLI (Ila kan l-key s-sahih w mazal mafatih l-waqt)
+-- 3. SCRIPT L-ASLI W L-UI
 -- ==========================================
 print("POWER HUB: Key & Expiry Verified Successfully!")
 
