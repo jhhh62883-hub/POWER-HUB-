@@ -1,101 +1,106 @@
 -- ==========================================
--- POWER HUB ⚡ | Official Loader with API Key System
+-- POWER HUB ⚡ | Modern Secure Loader
 -- ==========================================
-local Players = game:GetService("Players")
 local HttpService = game:GetService("HttpService")
+local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 
--- 1. UI dyal Key System (Bhal li f s-sowra dyalk)
-local ScreenGuiKey = Instance.new("ScreenGui")
-ScreenGuiKey.Name = "PowerHubKeySystem"
-ScreenGuiKey.Parent = game.CoreGui
+-- Baddal had l-link b l-API dyal l-Key System li kat-sta3ml (Mital: KeyRBLX / Lucid / Custom API)
+local API_URL = "https://your-key-system-api.com/api/check?key=" 
 
-local KeyFrame = Instance.new("Frame")
-KeyFrame.Size = UDim2.new(0, 260, 0, 130)
-KeyFrame.Position = UDim2.new(0.5, -130, 0.5, -65)
-KeyFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 18)
-KeyFrame.BorderSizePixel = 0
-KeyFrame.Active = true
-KeyFrame.Draggable = true
-KeyFrame.Parent = ScreenGuiKey
+-- UI dyal Key System
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "PowerHubAuth"
+ScreenGui.Parent = game.CoreGui
 
-local UICorner = Instance.new("UICorner", KeyFrame)
-UICorner.CornerRadius = UDim.new(0, 10)
+local Frame = Instance.new("Frame")
+Frame.Size = UDim2.new(0, 300, 0, 150)
+Frame.Position = UDim2.new(0.5, -150, 0.5, -75)
+Frame.BackgroundColor3 = Color3.fromRGB(18, 18, 22)
+Frame.BorderSizePixel = 0
+Frame.Active = true
+Frame.Draggable = true
+Frame.Parent = ScreenGui
+
+local UICorner = Instance.new("UICorner", Frame)
+UICorner.CornerRadius = UDim.new(0, 12)
 
 local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(1, 0, 0, 30)
+Title.Size = UDim2.new(1, 0, 0, 40)
 Title.BackgroundTransparency = 1
-Title.Text = "POWER HUB ⚡ | Key System"
+Title.Text = "POWER HUB ⚡ | Authorization"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-Title.TextSize = 13
-Title.Font = Enum.Font.Code
-Title.Parent = KeyFrame
+Title.TextSize = 14
+Title.Font = Enum.Font.GothamBold
+Title.Parent = Frame
 
 local TextBox = Instance.new("TextBox")
-TextBox.Size = UDim2.new(0.85, 0, 0, 35)
-TextBox.Position = UDim2.new(0.075, 0, 0.35, 0)
-TextBox.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+TextBox.Size = UDim2.new(0.85, 0, 0, 40)
+TextBox.Position = UDim2.new(0.075, 0, 0.4, 0)
+TextBox.BackgroundColor3 = Color3.fromRGB(28, 28, 35)
 TextBox.BorderSizePixel = 0
-TextBox.PlaceholderText = "Enter Key Here..."
+TextBox.PlaceholderText = "Paste your license key here..."
 TextBox.Text = ""
 TextBox.TextColor3 = Color3.fromRGB(255, 255, 255)
 TextBox.TextSize = 12
-TextBox.Font = Enum.Font.Code
-TextBox.Parent = KeyFrame
+TextBox.Font = Enum.Font.Gotham
+TextBox.Parent = Frame
 
 local BoxCorner = Instance.new("UICorner", TextBox)
-BoxCorner.CornerRadius = UDim.new(0, 6)
+BoxCorner.CornerRadius = UDim.new(0, 8)
 
-local SubmitBtn = Instance.new("TextButton")
-SubmitBtn.Size = UDim2.new(0.85, 0, 0, 30)
-SubmitBtn.Position = UDim2.new(0.075, 0, 0.7, 0)
-SubmitBtn.BackgroundColor3 = Color3.fromRGB(40, 120, 255)
-SubmitBtn.BorderSizePixel = 0
-SubmitBtn.Text = "VERIFY KEY"
-SubmitBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-SubmitBtn.TextSize = 12
-SubmitBtn.Font = Enum.Font.Code
-SubmitBtn.Parent = KeyFrame
+local VerifyBtn = Instance.new("TextButton")
+VerifyBtn.Size = UDim2.new(0.85, 0, 0, 35)
+VerifyBtn.Position = UDim2.new(0.075, 0, 0.72, 0)
+VerifyBtn.BackgroundColor3 = Color3.fromRGB(0, 160, 255)
+VerifyBtn.BorderSizePixel = 0
+VerifyBtn.Text = "LOGIN"
+VerifyBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+VerifyBtn.TextSize = 13
+VerifyBtn.Font = Enum.Font.GothamBold
+VerifyBtn.Parent = Frame
 
-local BtnCorner = Instance.new("UICorner", SubmitBtn)
-BtnCorner.CornerRadius = UDim.new(0, 6)
+local BtnCorner = Instance.new("UICorner", VerifyBtn)
+VerifyBtn.Parent = Frame
+BtnCorner.CornerRadius = UDim.new(0, 8)
 
-local keyVerified = false
+local verified = false
 
--- Timer dyal Kick ila ma dakhlch l-key
-task.delay(20, function()
-    if not keyVerified then
-        LocalPlayer:Kick("[POWERHUB SECURITY]\n❌ Invalid Key or Expired! Get a valid key from our shop.")
+-- Security check after 15 seconds
+task.delay(15, function()
+    if not verified then
+        LocalPlayer:Kick("[POWERHUB SECURITY]: Unauthenticated access attempt.")
     end
 end)
 
-SubmitBtn.MouseButton1Click:Connect(function()
-    local userKey = TextBox.Text
+VerifyBtn.MouseButton1Click:Connect(function()
+    local key = TextBox.Text
+    if key == "" then return end
     
-    if userKey == "" then return end
+    VerifyBtn.Text = "CHECKING..."
     
-    SubmitBtn.Text = "CHECKING..."
-    
-    -- 2. Hna kat-dir l-API link dyal l-keys li kat-generer (Mital: KeyRBLX wla database dyalk)
-    -- L-API kat-verifie wach l-key kain w active wla la
-    local success, response = pcall(function()
-        -- Baddal had l-link b l-API dyal l-Key System li kat-sta3ml
-        -- return game:HttpGet("https://your-key-system-api.com/verify?key=" .. userKey)
-        
-        -- Ila knti baghi t-jrb ghir b mital lokal 3adi:
-        if userKey == "POWER-VIP-2026" then return "true" else return "false" end
+    -- Request HTTP l l-API bash t-verifie l-key 
+    local success, res = pcall(function()
+        -- L-script kay-sifet request l l-server dyalk wla l-API dyal l-keys
+        local response = game:HttpGet(API_URL .. HttpService:UrlEncode(key))
+        return response
     end)
     
-    if success and response == "true" then
-        keyVerified = true
-        ScreenGuiKey:Destroy()
-        
-        -- ==========================================
-        -- 3. HNA K-T-HOTT SCRIPT DYALK L-ASLI (L-Lagger w UI)
-        -- ==========================================
-        print("Access Granted! Loading Power Hub...")
-        
+    if success and res then
+        -- Ila l-API rj3at an l-key s-sahih (Mital: JSON response fih status = true)
+        if res:find("true") or res:find("success") then
+            verified = true
+            ScreenGui:Destroy()
+            
+            -- Hna fin kay-t-loadia l-script l-asli dyal l-lagger b loadstring tani ila bghiti
+            print("Key Validated Successfully!")
+            -- loadstring(game:HttpGet("LINK_DYAL_SCRIPT_L_ASLI"))()
+        else
+            LocalPlayer:Kick("[POWERHUB SECURITY]: ❌ Invalid or Expired Key!")
+        end
     else
-        LocalPlayer:Kick("[POWERHUB SECURITY]\n❌ Invalid Key or Expired! Get a valid key from our shop.")
+        VerifyBtn.Text = "CONNECTION ERROR"
+        task.wait(2)
+        VerifyBtn.Text = "LOGIN"
     end
 end)
