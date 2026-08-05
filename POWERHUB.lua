@@ -1,16 +1,16 @@
 -- ==========================================
--- POWER HUB ⚡ | Bot Dynamic Expiry Loader
+-- POWER HUB ⚡ | Dynamic Discord Bot Loader
 -- ==========================================
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 
--- Kan-t-qraw l-key w l-expiry timestamp li sifto l-bot dy Discord
+-- Kan-t-qraw l-key w l-expiry li kat-sifet l-bot dyalk f Discord
 local providedKey = _G.script_key or script_key or (getgenv and getgenv().script_key)
 local expiryTime = _G.script_expiry or script_expiry or (getgenv and getgenv().script_expiry)
 
--- 1. Wach l-key mawjod w maktob?
+-- 1. Wach l-moshteri dar l-key wla ja dakh, bla key? (Y-tkicka)
 if not providedKey then
     LocalPlayer:Kick([[
 [POWERHUB SECURITY]
@@ -19,8 +19,7 @@ if not providedKey then
     return
 end
 
--- 2. Wach l-key expira (Waqt fatah)?
--- (Ila kan l-bot kay-sifet expiry timestamp, kan-mpariwah m3a os-sa3a l-halia)
+-- 2. Wach l-key expira (Waqt fatah 24h / 7d / 30d)?
 if expiryTime and type(expiryTime) == "number" then
     if os.time() > expiryTime then
         LocalPlayer:Kick([[
@@ -32,7 +31,7 @@ if expiryTime and type(expiryTime) == "number" then
 end
 
 -- ==========================================
--- SCRIPT L-ASLI (Ila kan l-key s-sahih w mazal mafatih l-waqt)
+-- 3. SCRIPT L-ASLI (Ila kan l-key s-sahih w mazal mafatih l-waqt)
 -- ==========================================
 print("POWER HUB: Key & Expiry Verified Successfully!")
 
