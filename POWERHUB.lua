@@ -1,23 +1,21 @@
 -- ==========================================
--- POWER HUB ⚡ | Discord Bot Key Loader
+-- POWER HUB ⚡ | Fixed Discord Key Loader
 -- ==========================================
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 
--- 1. Kan-t-2kkdo wach l-moshteri dar l-key f l-awal dyal l-loadstring wla la
-local providedKey = getgenv().script_key
+-- Kan-t-2kkdo mn l-key b 2 tariqat bash may-ghltch l-executor
+local providedKey = getgenv().script_key or _G.script_key
 
--- Qayma dyal l-keys l-haqiqiya li generertihom (Wla t-baddlha b database/API dyalk)
--- Hna k-t-zid l-keys li k-t-sifto f Discord
+-- Qayma dyal l-keys dyalk (Zid hna l-keys li k-t-sifto f Discord)
 local VALID_KEYS = {
     ["POWERD1SRDFBWBAYOFZ6C"] = true,
     ["EXAMPLE_KEY_2"] = true,
-    ["VIP_KEY_2026"] = true,
 }
 
--- Ila ma darsh l-key ga3 wla dar key ghalat
+-- Ila ma kanch l-key wla ghalat, y-tkicka
 if not providedKey or not VALID_KEYS[providedKey] then
     LocalPlayer:Kick([[
 [POWERHUB SECURITY]
@@ -27,7 +25,7 @@ if not providedKey or not VALID_KEYS[providedKey] then
 end
 
 -- ==========================================
--- 2. ILAA KAN L-KEY SAHIH - K-Y-KHEDDAM L-SCRIPT
+-- SCRIPT L-ASLI (Ila kan l-key s-sahih)
 -- ==========================================
 print("POWER HUB: Key Verified Successfully!")
 
@@ -131,7 +129,7 @@ for _, v in pairs(workspace:GetDescendants()) do
     end
 end
 
--- ==================== UI ====================
+-- UI
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "PowerHubDuelLagger"
 ScreenGui.ResetOnSpawn = false
