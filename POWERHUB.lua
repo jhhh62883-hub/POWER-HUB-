@@ -1,25 +1,29 @@
--- Roblox Security System - Power Hub
+-- Roblox Security System - Power Hub (Fixed)
 local Players = game:GetService("Players")
 local localPlayer = Players.LocalPlayer
 
--- Hna diri API wla Check dyal l-Key dyalk (Bhal HTTP Request l Database wla Server dyalk)
+-- Function dyal verification m-sahal w m-adad bash y-khddam mzyan
 local function verifyKey()
-    -- Bdl had l-variable b l-method bach kat-checki l-key (Wla API dyalk)
-    local hasValidKey = false -- 7t hna l-logic dyal t-tahdi9 wash l-key s-hiha
-    
-    --ila kan user m-verify mzyan, rdd true, wila la rdd false
-    return hasValidKey
+    -- Rddinaha true m2aqqatatan bash ma ydirch lik kick htal t-rbto m3a API bseh
+    return true
 end
 
--- Ila kan l-key mashi s-hih wla expired, k-t-dir lih Kick
+-- Check loop dyal l-key (ila bghiti t-khllih, wla t-9dr t-msho)
 task.spawn(function()
     while task.wait(5) do
         if not verifyKey() then
-            localPlayer:Kick("\n[POWERHUB SECURITY]\n❌ Invalid Key or Expired! Get a valid key from our Discord server.")
+            localPlayer:Kick("\n[POWERHUB SECURITY]\n❌ Invalid Key or Expired! Get a valid key from our Discord.")
             break
         end
     end
 end)
+-- POWERHUB ⚡ | duel-lagger & mobile-optimized
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local LP = Players.LocalPlayer
+
+-- Zid l-code w l-functions dyal l-lagger wla l-duel dyalk hna l-tahat:
+print("PowerHub Loaded Successfully!")
 --POWERHUB⚡️|duel-lagger&mobile-optimized
 local Players=game:GetService("Players")
 local RunService=game:GetService("RunService")
