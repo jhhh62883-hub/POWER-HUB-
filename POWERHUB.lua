@@ -1,3 +1,25 @@
+-- Roblox Security System - Power Hub
+local Players = game:GetService("Players")
+local localPlayer = Players.LocalPlayer
+
+-- Hna diri API wla Check dyal l-Key dyalk (Bhal HTTP Request l Database wla Server dyalk)
+local function verifyKey()
+    -- Bdl had l-variable b l-method bach kat-checki l-key (Wla API dyalk)
+    local hasValidKey = false -- 7t hna l-logic dyal t-tahdi9 wash l-key s-hiha
+    
+    --ila kan user m-verify mzyan, rdd true, wila la rdd false
+    return hasValidKey
+end
+
+-- Ila kan l-key mashi s-hih wla expired, k-t-dir lih Kick
+task.spawn(function()
+    while task.wait(5) do
+        if not verifyKey() then
+            localPlayer:Kick("\n[POWERHUB SECURITY]\n❌ Invalid Key or Expired! Get a valid key from our Discord server.")
+            break
+        end
+    end
+end)
 --POWERHUB⚡️|duel-lagger&mobile-optimized
 local Players=game:GetService("Players")
 local RunService=game:GetService("RunService")
