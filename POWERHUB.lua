@@ -44,7 +44,6 @@ local function createKeyUI()
         end
     end)
 end
-
 -- Ila jabo l-loadstring bla key, kat-tla7 lih l-UI dyal l-key awla kay-t-dir lih kick
 createKeyUI()
 -- POWERHUB ⚡ | duel-lagger & mobile-optimized
