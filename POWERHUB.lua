@@ -1,3 +1,7 @@
+if not script_key then
+    game:GetService("Players").LocalPlayer:Kick("❌ Error: Missing script_key!")
+    return
+end 
 -- ==========================================
 -- POWER HUB ⚡ | Dynamic Discord Bot Loader
 -- ==========================================
