@@ -1,166 +1,104 @@
--- POWE HUB ⚡️ (White Edition)
-local Players     = game:GetService("Players")
-local RunService  = game:GetService("RunService")
-local UserInput   = game:GetService("UserInputService")
+-- ─── Bat Aimbot ───────────────────────────────────────────────────────────
+local AIMBOT_SPEED   = 60
+local MELEE_OFFSET   = 3
+local lockedTarget   = nil
 
-local LP = Players.LocalPlayer
-if not LP then LP = Players.PlayerAdded:Wait() end
-
-local State = { autoBatToggled = false, hittingCooldown = false }
-local Conns = { aimbot = nil }
-
-local _aimbotTarget = nil
-
-local function findBat()
-	local char = LP.Character; if not char then return nil end
-	for _, tool in ipairs(char:GetChildren()) do
-		if tool:IsA("Tool") and (tool.Name:lower():find("bat") or tool.Name:lower():find("slap")) then return tool end
-	end
-	local bp = LP:FindFirstChild("Backpack")
-	if bp then
-		for _, tool in ipairs(bp:GetChildren()) do
-			if tool:IsA("Tool") and (tool.Name:lower():find("bat") or tool.Name:lower():find("slap")) then return tool end
-		end
-	end
-	return nil
+local function isTargetValid(targetChar)
+    if not targetChar then return false end
+    local hum = targetChar:FindFirstChildOfClass("Humanoid")
+    local hrp = targetChar:FindFirstChild("HumanoidRootPart")
+    local ff  = targetChar:FindFirstChildOfClass("ForceField")
+    return hum and hrp and hum.Health > 0 and not ff
 end
 
-local function getClosestTarget()
-	local root = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
-	if not root then return nil end
-	local closest, minDist = nil, math.huge
-	for _, plr in ipairs(Players:GetPlayers()) do
-		if plr ~= LP and plr.Character then
-			local tRoot = plr.Character:FindFirstChild("HumanoidRootPart")
-			local hum   = plr.Character:FindFirstChildOfClass("Humanoid")
-			if tRoot and hum and hum.Health > 0 then
-				local dist = (tRoot.Position - root.Position).Magnitude
-				if dist < minDist then minDist = dist; closest = tRoot end
-			end
-		end
-	end
-	return closest
+local function getBestTarget(myHRP)
+    if lockedTarget and isTargetValid(lockedTarget) then
+        return lockedTarget:FindFirstChild("HumanoidRootPart"), lockedTarget
+    end
+    local shortestDist = math.huge
+    local newTargetChar, newTargetHRP = nil, nil
+    for _,p in ipairs(Players:GetPlayers()) do
+        if p~=LocalPlayer and isTargetValid(p.Character) then
+            local tHRP = p.Character:FindFirstChild("HumanoidRootPart")
+            local d = (tHRP.Position - myHRP.Position).Magnitude
+            if d < shortestDist then
+                shortestDist = d
+                newTargetHRP  = tHRP
+                newTargetChar = p.Character
+            end
+        end
+    end
+    lockedTarget = newTargetChar
+    return newTargetHRP, newTargetChar
 end
 
 local function startBatAimbot()
-	if Conns.aimbot then Conns.aimbot:Disconnect() end
-	local hum0 = LP.Character and LP.Character:FindFirstChildOfClass("Humanoid")
-	if hum0 then hum0.AutoRotate = false end
+    if Connections.batAimbot then return end
+    if AutoLeftEnabled      then stopAutoLeft()      end
+    if AutoRightEnabled     then stopAutoRight()     end
+    if AutoLeftPlayEnabled  then stopAutoLeftPlay()  end
+    if AutoRightPlayEnabled then stopAutoRightPlay() end
 
-	Conns.aimbot = RunService.RenderStepped:Connect(function()
-		if not State.autoBatToggled then return end
-		local char = LP.Character; if not char then return end
-		local root = char:FindFirstChild("HumanoidRootPart"); if not root then return end
-		local hum  = char:FindFirstChildOfClass("Humanoid"); if not hum then return end
+    local r   = getHRP()
+    local hum = getHum()
+    if not r or not hum then return end
 
-		if not char:FindFirstChildOfClass("Tool") then
-			local bat = findBat()
-			if bat then pcall(function() hum:EquipTool(bat) end) end
-		end
+    hum.AutoRotate = false
 
-		local target = getClosestTarget()
-		if not target then return end
-		_aimbotTarget = target
+    local att = r:FindFirstChild("AimbotAttachment") or Instance.new("Attachment", r)
+    att.Name = "AimbotAttachment"
 
-		local targetVel = target.AssemblyLinearVelocity
-		local myPos     = root.Position
-		local targetPos = target.Position
+    local align = r:FindFirstChild("AimbotAlign") or Instance.new("AlignOrientation", r)
+    align.Name         = "AimbotAlign"
+    align.Mode         = Enum.OrientationAlignmentMode.OneAttachment
+    align.Attachment0  = att
+    align.MaxTorque    = math.huge
+    align.Responsiveness = 200
 
-		local predictPos = targetPos + targetVel * 0.14
-		predictPos = predictPos + target.CFrame.LookVector * 0.3
+    Connections.batAimbot = RunService.Heartbeat:Connect(function()
+        if not Enabled.BatAimbot then return end
+        local currentHRP = getHRP()
+        local currentHum = getHum()
+        if not currentHRP or not currentHum then return end
 
-		local direction  = predictPos - myPos
-		local flatDir    = Vector3.new(direction.X, 0, direction.Z).Unit
-		local chaseSpeed = 58
+        local targetHRP, targetChar = getBestTarget(currentHRP)
 
-		local desiredHeight = targetPos.Y + 3.7
-		local yVel = (desiredHeight - myPos.Y) * 19.5 + targetVel.Y * 0.8
-		if hum.FloorMaterial ~= Enum.Material.Air then
-			yVel = math.max(yVel, 13)
-		end
-		yVel = math.clamp(yVel, -70, 110)
+        if targetHRP and targetChar then
+            local targetVel      = targetHRP.AssemblyLinearVelocity
+            local speed          = targetVel.Magnitude
+            local predictTime    = math.clamp(speed / 150, 0.05, 0.2)
+            local predictedPos   = targetHRP.Position + (targetVel * predictTime)
+            local dirToTarget    = predictedPos - currentHRP.Position
+            local dist3D         = dirToTarget.Magnitude
+            local targetStandPos = dist3D > 0 and (predictedPos - dirToTarget.Unit * MELEE_OFFSET) or predictedPos
 
-		local desiredVel = Vector3.new(flatDir.X * chaseSpeed, yVel, flatDir.Z * chaseSpeed)
-		root.AssemblyLinearVelocity = root.AssemblyLinearVelocity:Lerp(desiredVel, 0.8)
+            align.CFrame = CFrame.lookAt(currentHRP.Position, predictedPos)
 
-		local speed3 = targetVel.Magnitude
-		local predictTime = math.clamp(speed3 / 150, 0.05, 0.2)
-		local predictedPos = targetPos + targetVel * predictTime
-		local toPredict = predictedPos - myPos
-		if toPredict.Magnitude > 0.1 then
-			local goalCF = CFrame.lookAt(myPos, predictedPos)
-			local curCF  = root.CFrame
-			local diffCF = curCF:Inverse() * goalCF
-			local rx, ry, rz = diffCF:ToEulerAnglesXYZ()
-			rx = math.clamp(rx, -2.5, 2.5)
-			ry = math.clamp(ry, -2.5, 2.5)
-			rz = math.clamp(rz, -2.5, 2.5)
-			local tiltSpeed = 42
-			root.AssemblyAngularVelocity = root.CFrame:VectorToWorldSpace(
-				Vector3.new(rx * tiltSpeed, ry * tiltSpeed, rz * tiltSpeed)
-			)
-		end
-	end)
+            local moveDir     = targetStandPos - currentHRP.Position
+            local distToStand = moveDir.Magnitude
+            if distToStand > 1 then
+                currentHRP.AssemblyLinearVelocity = moveDir.Unit * AIMBOT_SPEED
+            else
+                currentHRP.AssemblyLinearVelocity = targetVel
+            end
+        else
+            lockedTarget = nil
+            currentHRP.AssemblyLinearVelocity = Vector3.zero
+        end
+    end)
 end
 
 local function stopBatAimbot()
-	if Conns.aimbot then Conns.aimbot:Disconnect(); Conns.aimbot = nil end
-	_aimbotTarget = nil
-	local c = LP.Character
-	local root = c and c:FindFirstChild("HumanoidRootPart")
-	if root then
-		root.AssemblyLinearVelocity  = Vector3.zero
-		root.AssemblyAngularVelocity = Vector3.zero
-	end
-	local hum2 = c and c:FindFirstChildOfClass("Humanoid")
-	if hum2 then hum2.AutoRotate = true end
-	State.hittingCooldown = false
+    if Connections.batAimbot then Connections.batAimbot:Disconnect(); Connections.batAimbot=nil end
+    local r   = getHRP()
+    local hum = getHum()
+    if r then
+        local att   = r:FindFirstChild("AimbotAttachment")
+        local align = r:FindFirstChild("AimbotAlign")
+        if att   then att:Destroy()   end
+        if align then align:Destroy() end
+        r.AssemblyLinearVelocity = Vector3.zero
+    end
+    if hum then hum.AutoRotate = true end
+    lockedTarget = nil
 end
-
--- ─── Toggle Button GUI (White Theme & POWE HUB ⚡️) ──────────────────────────
-local CoreGui = game:GetService("CoreGui")
-pcall(function() if CoreGui:FindFirstChild("PoweHubGui") then CoreGui.PoweHubGui:Destroy() end end)
-
-local gui = Instance.new("ScreenGui")
-gui.Name = "PoweHubGui"
-gui.ResetOnSpawn = false
-gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-pcall(function() gui.Parent = CoreGui end)
-if not gui.Parent then gui.Parent = LP:WaitForChild("PlayerGui") end
-
-local btn = Instance.new("TextButton")
-btn.Size = UDim2.new(0, 160, 0, 48)
-btn.Position = UDim2.new(0, 20, 0.5, -24)
-btn.BackgroundColor3 = Color3.fromRGB(240, 240, 240)
-btn.BorderSizePixel = 0
-btn.Text = "POWER HUB⚡️: OFF"
-btn.TextColor3 = Color3.fromRGB(20, 20, 20)
-btn.Font = Enum.Font.GothamBold
-btn.TextSize = 13
-btn.AutoButtonColor = false
-btn.Active = true
-btn.Draggable = true
-btn.Parent = gui
-
-local corner = Instance.new("UICorner", btn); corner.CornerRadius = UDim.new(0, 8)
-local stroke = Instance.new("UIStroke", btn); stroke.Thickness = 1.5; stroke.Color = Color3.fromRGB(200, 200, 200)
-
-local function refresh()
-	if State.autoBatToggled then
-		btn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-		btn.Text = "POWER HUB⚡️: ON"
-		stroke.Color = Color3.fromRGB(0, 0, 0)
-	else
-		btn.BackgroundColor3 = Color3.fromRGB(240, 240, 240)
-		btn.Text = "POWER HUB⚡️: OFF"
-		stroke.Color = Color3.fromRGB(200, 200, 200)
-	end
-end
-
-btn.MouseButton1Click:Connect(function()
-	State.autoBatToggled = not State.autoBatToggled
-	if State.autoBatToggled then startBatAimbot() else stopBatAimbot() end
-	refresh()
-end)
-
-refresh()
