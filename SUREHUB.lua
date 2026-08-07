@@ -1,4 +1,8 @@
-repeat task.wait() until game:IsLoaded()
+if not script_key then
+    game:GetService("Players").LocalPlayer:Kick("❌ Error: Missing script_key!")
+    return
+end
+    repeat task.wait() until game:IsLoaded()
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UIS = game:GetService("UserInputService")
