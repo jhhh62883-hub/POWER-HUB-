@@ -1,4 +1,4 @@
-if not script_key then kick() end⁠--[[
+--[[
     AUTO BAT (Aimbot) – from Cursed Hub PC
     - Draggable toggle button
     - Moves toward nearest enemy 
