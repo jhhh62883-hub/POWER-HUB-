@@ -1,5 +1,4 @@
 -- POWE HUB ⚡️ (White Edition)
-
 local Players     = game:GetService("Players")
 local RunService  = game:GetService("RunService")
 local UserInput   = game:GetService("UserInputService")
