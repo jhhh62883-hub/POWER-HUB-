@@ -1,4 +1,7 @@
-repeat task.wait() until game:IsLoaded()
+if not script_key then
+    game:GetService("Players").LocalPlayer:Kick("❌ Error: Missing script_key!")
+    return
+endrepeat task.wait() until game:IsLoaded()
 --[[
     POWER HUB⚡️ - Compact Modern Glass Style with Minimize Button
     - Smaller & more compact design
