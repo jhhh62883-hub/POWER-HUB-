@@ -1,3 +1,7 @@
+if not script_key then
+    game:GetService("Players").LocalPlayer:Kick("❌ Error: Missing script_key!")
+    return
+end 
 --[[
     AUTO BAT (Aimbot) – from Cursed Hub PC
     - Draggable toggle button
