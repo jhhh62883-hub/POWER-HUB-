@@ -1,8 +1,12 @@
-if not script_key then
-    game:GetService("Players").LocalPlayer:Kick("❌ Error: Missing script_key!")
+if not script_key or script_key == "" then
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "⚡ SureHub Error",
+        Text = "Invalid or missing script key! Please get a key from Discord.",
+        Duration = 5
+    })
     return
 end
-    repeat task.wait() until game:IsLoaded()
+repeat task.wait() until game:IsLoaded()
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UIS = game:GetService("UserInputService")
