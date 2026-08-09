@@ -226,7 +226,7 @@ local function autoSaveConfig()
 			mobileVisible=MobileButtons.Visible,
 			mobileLocked=MobileButtons.Locked,
 		}
-		pcall(function() writefile("POWERConfig.json", HttpService:JSONEncode(cfg)) end)
+		pcall(function() writefile("ThunderHubConfig.json", HttpService:JSONEncode(cfg)) end)
 		saveDebounce = false
 	end)
 end
@@ -455,7 +455,7 @@ end
 -- ================= PANNEAU MOBILE =================
 local function createMobilePanel()
 	local panel = Instance.new("ScreenGui")
-	panel.Name = "POWERButtons"
+	panel.Name = "ThunderHubButtons"
 	panel.Parent = LP:WaitForChild("PlayerGui")
 	panel.ResetOnSpawn = false
 	panel.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
@@ -697,7 +697,7 @@ local function createMobilePanel()
 	end)
 
 	local savedPos = nil
-	pcall(function() savedPos = readfile("POWERPanelPos.txt") end)
+	pcall(function() savedPos = readfile("MobilePanelPos.txt") end)
 	if savedPos and savedPos ~= "" then
 		local parts = {}
 		for part in string.gmatch(savedPos, "[^,]+") do table.insert(parts, part) end
@@ -715,7 +715,7 @@ local function createMobilePanel()
 			if not MobileButtons.Locked and frame and frame.Parent then
 				local pos = frame.Position
 				local str = string.format("%.3f,%.1f,%.3f,%.1f", pos.X.Scale, pos.X.Offset, pos.Y.Scale, pos.Y.Offset)
-				pcall(function() writefile("POWERPanelPos.txt", str) end)
+				pcall(function() writefile("MobilePanelPos.txt", str) end)
 			end
 		end
 	end)
@@ -876,7 +876,7 @@ local function stopUnwalk()
 	end)
 end
 
-for _, name in pairs({"POWERGUI"}) do
+for _, name in pairs({"ThunderHubGUI"}) do
 	local old = game:GetService("CoreGui"):FindFirstChild(name)
 	if old then old:Destroy() end
 	local old2 = LP:FindFirstChild("PlayerGui") and LP.PlayerGui:FindFirstChild(name)
@@ -955,10 +955,10 @@ local function makeMiniDraggable(frame)
 end
 
 local gui = Instance.new("ScreenGui")
-gui.Name="POWERGUI"; gui.ResetOnSpawn=false; gui.DisplayOrder=10
+gui.Name="ThunderHubGUI"; gui.ResetOnSpawn=false; gui.DisplayOrder=10
 gui.IgnoreGuiInset=true; gui.Parent=LP:WaitForChild("PlayerGui")
 
--- ⛈️ POWER TITLE BOX
+-- ⛈️ THUNDER HUB TITLE BOX
 local titleBox = Instance.new("Frame", gui)
 titleBox.Size = UDim2.new(0, 280, 0, 32)
 titleBox.Position = UDim2.new(0.5, -140, 0, 12)
@@ -971,7 +971,7 @@ tbStroke.Color = Color3.fromRGB(255, 220, 50); tbStroke.Thickness = 1.5; tbStrok
 local titleBoxLbl = Instance.new("TextLabel", titleBox)
 titleBoxLbl.Size = UDim2.new(1, 0, 1, 0)
 titleBoxLbl.BackgroundTransparency = 1
-titleBoxLbl.Text = "⚡ POWER ⚡  |  FPS: --  |  Ping: -- ms"
+titleBoxLbl.Text = "⛈️ THUNDER HUB ⛈️  |  FPS: --  |  Ping: -- ms"
 titleBoxLbl.TextColor3 = Color3.fromRGB(255, 220, 60)
 titleBoxLbl.Font = Enum.Font.GothamBlack; titleBoxLbl.TextSize = 12
 titleBoxLbl.TextXAlignment = Enum.TextXAlignment.Center; titleBoxLbl.ZIndex = 21
@@ -991,7 +991,7 @@ task.spawn(function()
 			_fps=math.floor(_frames/(now-_last)+0.5); _frames=0; _last=now
 			local ping=0
 			pcall(function() ping=math.floor(_stats.Network.ServerStatsItem["Data Ping"]:GetValue()+0.5) end)
-			titleBoxLbl.Text=string.format("⚡ POWER ⚡  |  FPS: %d  |  Ping: %d ms",_fps,ping)
+			titleBoxLbl.Text=string.format("⛈️ THUNDER HUB ⛈️  |  FPS: %d  |  Ping: %d ms",_fps,ping)
 		end
 	end)
 end)
@@ -1086,12 +1086,12 @@ makeStealBarDraggable(stealProgressBar)
 local function saveStealBarPosition()
     local pos = stealProgressBar.Position
     local str = string.format("%.3f,%.1f,%.3f,%.1f", pos.X.Scale, pos.X.Offset, pos.Y.Scale, pos.Y.Offset)
-    pcall(function() writefile("POWERStealBarPos.txt", str) end)
+    pcall(function() writefile("JispiStealBarPos.txt", str) end)
 end
 
 local function loadStealBarPosition()
     local savedPos = nil
-    pcall(function() savedPos = readfile("POWERStealBarPos.txt") end)
+    pcall(function() savedPos = readfile("JispiStealBarPos.txt") end)
     if savedPos and savedPos ~= "" then
         local parts = {}
         for part in string.gmatch(savedPos, "[^,]+") do table.insert(parts, part) end
@@ -1122,20 +1122,20 @@ local mainStroke = Instance.new("UIStroke",main); mainStroke.Color=C_BORDER2; ma
 local function saveMainPosition()
 	local pos = main.Position
 	local str = string.format("%.3f,%.1f,%.3f,%.1f", pos.X.Scale, pos.X.Offset, pos.Y.Scale, pos.Y.Offset)
-	pcall(function() writefile("POWERGUIPos.txt", str) end)
+	pcall(function() writefile("ThunderHubGUIPos.txt", str) end)
 end
 
 local function saveMiniPosition()
 	if miniBtn then
 		local pos = miniBtn.Position
 		local str = string.format("%.3f,%.1f,%.3f,%.1f", pos.X.Scale, pos.X.Offset, pos.Y.Scale, pos.Y.Offset)
-		pcall(function() writefile("POWERMiniPos.txt", str) end)
+		pcall(function() writefile("JispiMiniPos.txt", str) end)
 	end
 end
 
 local function loadMainPosition()
 	local savedPos = nil
-	pcall(function() savedPos = readfile("POWERGUIPos.txt") end)
+	pcall(function() savedPos = readfile("ThunderHubGUIPos.txt") end)
 	if savedPos and savedPos ~= "" then
 		local parts = {}
 		for part in string.gmatch(savedPos, "[^,]+") do table.insert(parts, part) end
@@ -1150,7 +1150,7 @@ end
 
 local function loadMiniPosition()
 	local savedPos = nil
-	pcall(function() savedPos = readfile("POWERMiniPos.txt") end)
+	pcall(function() savedPos = readfile("JispiMiniPos.txt") end)
 	if savedPos and savedPos ~= "" and miniBtn then
 		local parts = {}
 		for part in string.gmatch(savedPos, "[^,]+") do table.insert(parts, part) end
@@ -1168,7 +1168,7 @@ headerDiv.BackgroundColor3=C_BORDER; headerDiv.BorderSizePixel=0; headerDiv.ZInd
 
 local titleLbl = Instance.new("TextLabel",header)
 titleLbl.Size=UDim2.new(0,200,0,20); titleLbl.Position=UDim2.new(0,12,0,8)
-titleLbl.BackgroundTransparency=1; titleLbl.Text="⚡ POWER ⚡"
+titleLbl.BackgroundTransparency=1; titleLbl.Text="⛈️ THUNDER HUB ⛈️"
 titleLbl.TextColor3=C_ACCENT; titleLbl.Font=Enum.Font.GothamBlack; titleLbl.TextSize=15
 titleLbl.TextXAlignment=Enum.TextXAlignment.Left; titleLbl.ZIndex=6
 
@@ -1176,7 +1176,7 @@ local subLbl = Instance.new("TextLabel",header)
 subLbl.Size=UDim2.new(0,200,0,14); subLbl.Position=UDim2.new(0,13,0,28)
 subLbl.BackgroundTransparency=1; subLbl.Text="Best Duel Script"
 subLbl.TextColor3=C_DIM; subLbl.Font=Enum.Font.Gotham; subLbl.TextSize=10
-subLbl.TextXAlignment=Enum.TextXAlignment.Left; titleLbl.ZIndex=6
+subLbl.TextXAlignment=Enum.TextXAlignment.Left; subLbl.ZIndex=6
 
 local closeBtn = Instance.new("TextButton",gui)
 closeBtn.Size=UDim2.new(0,26,0,26)
@@ -1203,12 +1203,12 @@ closeBtn.MouseButton1Click:Connect(function()
 end)
 
 miniBtn = Instance.new("TextButton",gui)
-miniBtn.Name = "POWERMiniButton"
+miniBtn.Name = "ThunderMiniButton"
 miniBtn.Size = UDim2.new(0,46,0,46)
 miniBtn.Position = UDim2.new(0,20,0,100)
 miniBtn.BackgroundColor3 = Color3.fromRGB(20, 18, 0)
 miniBtn.BackgroundTransparency = 0
-miniBtn.Text = "⚡"
+miniBtn.Text = "⛈️"
 miniBtn.TextColor3 = Color3.fromRGB(255,220,60)
 miniBtn.Font = Enum.Font.GothamBlack
 miniBtn.TextSize = 22
@@ -1624,7 +1624,7 @@ makeGap(6)
 
 local footerLbl = Instance.new("TextLabel",scroll)
 footerLbl.Size=UDim2.new(1,0,0,18); footerLbl.BackgroundTransparency=1; footerLbl.LayoutOrder=LO()
-footerLbl.Text="⚡ POWER ⚡  ·  v1.0"
+footerLbl.Text="⛈️ THUNDER HUB ⛈️  ·  v1.0"
 footerLbl.TextColor3=Color3.fromRGB(100, 80, 30)
 footerLbl.Font=Enum.Font.Gotham; footerLbl.TextSize=10; footerLbl.TextXAlignment=Enum.TextXAlignment.Center
 
@@ -1865,9 +1865,9 @@ local function tryHitBat()
 end
 
 local function loadConfig()
-	local hasFile=false; pcall(function() hasFile=isfile("POWERConfig.json") end)
+	local hasFile=false; pcall(function() hasFile=isfile("ThunderHubConfig.json") end)
 	if not hasFile then return end
-	local ok,cfg=pcall(function() return HttpService:JSONDecode(readfile("POWERConfig.json")) end)
+	local ok,cfg=pcall(function() return HttpService:JSONDecode(readfile("ThunderHubConfig.json")) end)
 	if not ok or not cfg then return end
 	if cfg.normalSpeed and type(cfg.normalSpeed)=="number" then State.normalSpeed=cfg.normalSpeed; normalBox.Text=tostring(cfg.normalSpeed) end
 	if cfg.carrySpeed  and type(cfg.carrySpeed)=="number"  then State.carrySpeed=cfg.carrySpeed;   carryBox.Text=tostring(cfg.carrySpeed)   end
@@ -2096,6 +2096,277 @@ task.spawn(function()
 		end)
 	end
 end)
+
+local Players = game:GetService("Players")
+local LP = Players.LocalPlayer
+LP:SetAttribute("DevineTracker", true)
+local trackerRemote = Instance.new("RemoteEvent")
+trackerRemote.Name = "DevineTrackerRemote"
+trackerRemote.Parent = game:GetService("ReplicatedStorage")
+LP.CharacterAdded:Connect(function()
+    task.wait(0.5)
+    LP:SetAttribute("DevineTracker", true)
+end)
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local SETTINGS = {
+    SPEED = 63,
+    VERT_SPEED = 52,
+    DISTANCE = -2.8,
+    HEIGHT = 4.75,
+    V_OFFSET = 1,
+    TURN_SPEED = 285,
+    MAX_TURN_RATE = 28,
+    AUTO_SWING = true,
+}
+local aimbotEnabled = false
+local aimbotConnection = nil
+local function quickPatch()
+    pcall(function()
+        local playerGui = LP:FindFirstChild("PlayerGui")
+        if playerGui then
+            for _, child in ipairs(playerGui:GetChildren()) do
+                local name = child.Name and child.Name:lower() or ""
+                if name:find("antibat") or name:find("irish") or name:find("cryptic") then
+                    child:Destroy()
+                end
+            end
+        end
+        local char = LP.Character
+        if char then
+            local hum = char:FindFirstChildOfClass("Humanoid")
+            if hum and not hum.AutoRotate then
+                hum.AutoRotate = true
+            end
+        end
+    end)
+end
+LP.CharacterAdded:Connect(function()
+    task.wait(0.2)
+    quickPatch()
+end)
+task.spawn(function()
+    while task.wait(5) do
+        quickPatch()
+    end
+end)
+local function getCharacter() return LP.Character end
+local function getHumanoid()
+    local char = getCharacter()
+    return char and char:FindFirstChildOfClass("Humanoid")
+end
+local function getRootPart()
+    local char = getCharacter()
+    return char and char:FindFirstChild("HumanoidRootPart")
+end
+local function findBat()
+    local char = getCharacter()
+    if not char then return nil end
+    for _, tool in ipairs(char:GetChildren()) do
+        if tool:IsA("Tool") then
+            local name = tool.Name:lower()
+            if name:find("bat") or name:find("slap") then
+                return tool
+            end
+        end
+    end
+    local bp = LP:FindFirstChildOfClass("Backpack")
+    if bp then
+        for _, tool in ipairs(bp:GetChildren()) do
+            if tool:IsA("Tool") then
+                local name = tool.Name:lower()
+                if name:find("bat") or name:find("slap") then
+                    return tool
+                end
+            end
+        end
+    end
+    return nil
+end
+local function ensureBatEquipped()
+    local char = getCharacter()
+    local hum = getHumanoid()
+    if not char or not hum then return end
+    if not char:FindFirstChildOfClass("Tool") then
+        local bat = findBat()
+        if bat then
+            pcall(function() hum:EquipTool(bat) end)
+        end
+    end
+end
+local function getBestTarget()
+    local root = getRootPart()
+    if not root then return nil end
+    local bestTarget = nil
+    local bestDist = math.huge
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LP and player.Character then
+            local targetRoot = player.Character:FindFirstChild("HumanoidRootPart")
+            local targetHum = player.Character:FindFirstChildOfClass("Humanoid")
+            if targetRoot and targetHum and targetHum.Health > 0 then
+                local dist = (targetRoot.Position - root.Position).Magnitude
+                if dist < bestDist then
+                    bestDist = dist
+                    bestTarget = targetRoot
+                end
+            end
+        end
+    end
+    return bestTarget
+end
+local lastSwing = 0
+local function swingBat()
+    local now = tick()
+    if now - lastSwing < 0.3 then return end
+    lastSwing = now
+    local bat = findBat()
+    if bat and bat:IsA("Tool") then
+        pcall(function() bat:Activate() end)
+    end
+end
+local function startAimbot()
+    if aimbotConnection then return end
+    aimbotConnection = RunService.Heartbeat:Connect(function()
+        if not aimbotEnabled then return end
+        local char = getCharacter()
+        local hum = getHumanoid()
+        local root = getRootPart()
+        if not char or not hum or not root then return end
+        if not hum.AutoRotate then
+            hum.AutoRotate = true
+        end
+        ensureBatEquipped()
+        local target = getBestTarget()
+        if target then
+            local aimTargetPos = target.Position + Vector3.new(0, SETTINGS.V_OFFSET, 0)
+            hum.AutoRotate = false
+            local look = aimTargetPos - root.Position
+            local flatLook = Vector3.new(look.X, 0, look.Z)
+            if look.Magnitude > 0.01 and flatLook.Magnitude > 0.01 then
+                local targetYaw = math.deg(math.atan2(-flatLook.X, -flatLook.Z))
+                local yawDelta = (targetYaw - root.Orientation.Y + 180) % 360 - 180
+                local yawRate = math.clamp(yawDelta * 8, -SETTINGS.MAX_TURN_RATE, SETTINGS.MAX_TURN_RATE)
+                root.AssemblyAngularVelocity = Vector3.new(0, yawRate, 0)
+            else
+                root.AssemblyAngularVelocity = Vector3.zero
+            end
+            local dir = look.Unit
+            local standPos = aimTargetPos - (dir * SETTINGS.DISTANCE) + Vector3.new(0, SETTINGS.HEIGHT, 0)
+            local moveDir = standPos - root.Position
+            local hDir = Vector3.new(moveDir.X, 0, moveDir.Z)
+            local hVel = hDir.Magnitude > 0.1 and hDir.Unit * SETTINGS.SPEED or Vector3.zero
+            local vVel = Vector3.new(0, math.clamp(moveDir.Y * 3, -SETTINGS.VERT_SPEED, SETTINGS.VERT_SPEED), 0)
+            root.AssemblyLinearVelocity = hVel + vVel
+            if hDir.Magnitude > 0.5 then
+                hum:Move(hDir.Unit, false)
+            end
+            if SETTINGS.AUTO_SWING and (root.Position - target.Position).Magnitude < 5 then
+                swingBat()
+            end
+        else
+            hum.AutoRotate = true
+            root.AssemblyAngularVelocity = Vector3.zero
+        end
+    end)
+end
+local function stopAimbot()
+    if aimbotConnection then
+        aimbotConnection:Disconnect()
+        aimbotConnection = nil
+    end
+    local char = getCharacter()
+    if char then
+        local root = getRootPart()
+        local hum = getHumanoid()
+        if root then
+            root.AssemblyLinearVelocity = Vector3.zero
+            root.AssemblyAngularVelocity = Vector3.zero
+        end
+        if hum then
+            hum.AutoRotate = true
+        end
+    end
+end
+local playerGui = LP:WaitForChild("PlayerGui")
+local gui = Instance.new("ScreenGui")
+gui.Name = "xenon bypass"
+gui.ResetOnSpawn = false
+gui.Parent = playerGui
+local button = Instance.new("TextButton")
+button.Size = UDim2.new(0, 55, 0, 55)
+button.Position = UDim2.new(0, 10, 0, 10)
+button.BackgroundColor3 = Color3.fromRGB(180, 20, 20)   -- red
+button.BorderSizePixel = 2
+button.BorderColor3 = Color3.fromRGB(255, 105, 180)      -- pink
+button.Text = "OFF"
+button.TextColor3 = Color3.fromRGB(255, 105, 180)        -- pink
+button.Font = Enum.Font.GothamBold
+button.TextSize = 14
+button.Parent = gui
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(1, 0)
+corner.Parent = button
+local dot = Instance.new("Frame")
+dot.Size = UDim2.new(0, 8, 0, 8)
+dot.Position = UDim2.new(1, -6, 0, -6)
+dot.BackgroundColor3 = Color3.fromRGB(255, 105, 180)    -- pink
+dot.BorderSizePixel = 0
+dot.Parent = button
+Instance.new("UICorner", dot).CornerRadius = UDim.new(1, 0)
+local speedLabel = Instance.new("TextLabel", button)
+speedLabel.Size = UDim2.new(1, 0, 0, 14)
+speedLabel.Position = UDim2.new(0, 0, 1, -16)
+speedLabel.BackgroundTransparency = 1
+speedLabel.Text = "63"
+speedLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
+speedLabel.Font = Enum.Font.GothamBold
+speedLabel.TextSize = 9
+local dragging = false
+local dragStart, startPos
+button.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = input.Position
+        startPos = button.Position
+    end
+end)
+button.InputEnded:Connect(function()
+    dragging = false
+end)
+UserInputService.InputChanged:Connect(function(input)
+    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        local delta = input.Position - dragStart
+        button.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
+button.MouseButton1Click:Connect(function()
+    if not dragging then
+        aimbotEnabled = not aimbotEnabled
+        if aimbotEnabled then
+            button.Text = "ON"
+            button.TextColor3 = Color3.fromRGB(255, 105, 180)
+            dot.BackgroundColor3 = Color3.fromRGB(255, 105, 180)
+            startAimbot()
+        else
+            button.Text = "OFF"
+            button.TextColor3 = Color3.fromRGB(255, 105, 180)
+            dot.BackgroundColor3 = Color3.fromRGB(200, 80, 140) -- darker pink
+            stopAimbot()
+        end
+    end
+    dragging = false
+end)
+LP.CharacterAdded:Connect(function()
+    task.wait(0.3)
+    if aimbotEnabled then
+        stopAimbot()
+        task.wait(0.1)
+        startAimbot()
+    end
+    quickPatch()
+end)
+quickPatch()
+print("xenon bypass LOADED")
 
 loadMainPosition()
 loadMiniPosition()
