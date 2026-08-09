@@ -1,6 +1,3 @@
-if not script_key then
-    game:GetService("Players").LocalPlayer:Kick("❌ Error: Missing script_key!")
-    return
 print("leaked by slivin and eugene🥷")
 print("leaked by slivin and eugene🥷")
 print("leaked by slivin and eugene🥷")
