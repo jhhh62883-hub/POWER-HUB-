@@ -1,8 +1,4 @@
-if not script_key then
-    game:GetService("Players").LocalPlayer:Kick("❌ Error: Missing script_key!")
-    return
-end 
-local Players = game:GetService("Players")
+ local Players = game:GetService("Players")
 local CoreGui = game:GetService("CoreGui")
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
